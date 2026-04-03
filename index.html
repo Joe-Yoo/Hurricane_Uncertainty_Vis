@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hurricane Uncertainty Vis</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="search-wrapper">
+      <input type="text" id="search-bar" class="search-bar" placeholder="Search location..." autocomplete="off" />
+      <ul id="suggestions" class="suggestions hidden"></ul>
+    </div>
+    <button id="search-btn" class="search-btn">Search</button>
+  </header>
+
+  <div class="container">
+    <section class="panel" id="left-panel">
+      <div class="box">
+        <h2>Left Section</h2>
+        <div id="map-left" class="map-container"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="right-panel">
+      <div class="box">
+        <h2>Right Section</h2>
+        <div id="map-right" class="map-container no-interact"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <script src="main.js"></script>
+</body>
+</html>
