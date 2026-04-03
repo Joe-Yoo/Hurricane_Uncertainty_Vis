@@ -8,4 +8,4 @@ In the base directory, run the following command. (with python installed)
 python -m http.server 8080
 ```
 
-Then visit [http://localhost:8080/](http://localhost:8080/)
+Then visit [http://localhost:8080/src/](http://localhost:8080/src/)
