@@ -106,16 +106,16 @@ async function init() {
         properties: { id: lineData.id }
       };
     });
-
+    
     gLeft.selectAll('path.hurricane-line')
       .data(lineFeatures)
       .join('path')
       .attr('class', 'hurricane-line')
       .attr('d', pathLeft)
       .attr('fill', 'none')
-      .attr('stroke', '#ff4b4b')
-      .attr('stroke-width', 2)
-      .attr('stroke-opacity', 0.6);
+      .attr('stroke', d => d.properties.id === 1 ? '#ff4b4b' : 'gray')
+      .attr('stroke-width', d => d.properties.id === 1 ? 2 : 1)
+      .attr('stroke-opacity', d => d.properties.id === 1 ? 0.6 : 0.3);
 
     // 2. Draw glyphs of line 1 on the right map
     const line1 = coneData.lines[0];
