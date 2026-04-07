@@ -2,6 +2,7 @@ const US_TOPO_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
 const WORLD_TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
 const maps = {};
+const tooltip = d3.select('body').append('div').attr('class', 'tooltip');
 
 async function createMap(containerId, { interactive = true } = {}) {
   const container = document.getElementById(containerId);
@@ -91,7 +92,7 @@ async function init() {
 
   const coneData = await d3.json('cone_data.json');
   if (coneData && coneData.lines && coneData.lines.length > 0) {
-    // 1. Draw all lines on the left map
+    // Draw all lines on the left map
     const { g: gLeft, path: pathLeft } = maps['map-left'];
     
     // Parse the Mlon,lat Llon,lat SVG path strings back into coordinates for D3 mapping
@@ -107,6 +108,7 @@ async function init() {
       };
     });
     
+    // TO DO: implement selection; currently hardcoded to highlight line 1
     gLeft.selectAll('path.hurricane-line')
       .data(lineFeatures)
       .join('path')
@@ -117,9 +119,16 @@ async function init() {
       .attr('stroke-width', d => d.properties.id === 1 ? 2 : 1)
       .attr('stroke-opacity', d => d.properties.id === 1 ? 0.6 : 0.3);
 
-    // 2. Draw glyphs of line 1 on the right map
+    // Draw glyphs on the right map
+    // TO DO: encode channels
     const line1 = coneData.lines[0];
     const { g: gRight, projection: projRight } = maps['map-right'];
+    const color = d3.scaleSequential()
+      .domain(d3.extent(line1.glyphs, d => d.temperature))
+      .interpolator(d3.interpolatePlasma);
+    const size = d3.scaleSequential()
+      .domain(d3.extent(line1.glyphs, d => d.wind_speed))
+      .range([5, 15]);
 
     gRight.selectAll('circle.glyph')
       .data(line1.glyphs)
@@ -133,10 +142,29 @@ async function init() {
         const coords = projRight([d.longitude, d.latitude]);
         return coords ? coords[1] : 0;
       })
-      .attr('r', 5)
-      .attr('fill', 'orange')
+      .attr('r', d => size(d.wind_speed))
+      .attr('fill', d => color(d.temperature))
       .attr('stroke', '#333')
-      .attr('stroke-width', 1);
+      .attr('stroke-width', 1)
+      .on('mouseover', (event, d) => {
+        tooltip.transition().duration(200).style('opacity', 1);
+        tooltip.html(`
+          <p><strong>Category:</strong> ${d.category}</p>
+          <p><strong>Wind Speed:</strong> ${d.wind_speed} mph</p>
+          <p><strong>Wind Gust:</strong> ${d.wind_gust} mph</p>
+          <p><strong>Precipitation:</strong> ${d.precipitation} (${d.precipitation_type.toLowerCase()})</p>
+          <p><strong>Event:</strong> ${d.event_code}</p>
+        `)
+        .style('left', (event.pageX + 15) + 'px')
+        .style('top', (event.pageY - 28) + 'px');
+      })
+      .on('mousemove', (event) => {
+        tooltip.style('left', (event.pageX + 15) + 'px')
+               .style('top', (event.pageY - 28) + 'px');
+      })
+      .on('mouseout', () => {
+        tooltip.transition().duration(200).style('opacity', 0);
+      });
   }
 }
 
