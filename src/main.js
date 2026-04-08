@@ -3,6 +3,7 @@ const WORLD_TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110
 
 const maps = {};
 const tooltip = d3.select('body').append('div').attr('class', 'tooltip');
+let tempMode = false;
 
 async function createMap(containerId, { interactive = true } = {}) {
   const container = document.getElementById(containerId);
@@ -73,9 +74,15 @@ async function createMap(containerId, { interactive = true } = {}) {
       const entry = maps[containerId];
       if (entry && entry.currentCoords) {
         const [px, py] = entry.currentCoords;
-        markerGroup.select('circle.location-marker')
-          .attr('cx', event.transform.applyX(px))
-          .attr('cy', event.transform.applyY(py));
+        const cx = event.transform.applyX(px);
+        const cy = event.transform.applyY(py);
+        markerGroup.select('circle.location-marker').attr('cx', cx).attr('cy', cy);
+        if (containerId === 'map-left') {
+          markerGroup.select('circle.location-radius')
+            .attr('cx', cx)
+            .attr('cy', cy)
+            .attr('r', 40 * event.transform.k);
+        }
       }
     });
 
@@ -108,63 +115,259 @@ async function init() {
       };
     });
     
-    // TO DO: implement selection; currently hardcoded to highlight line 1
-    gLeft.selectAll('path.hurricane-line')
+    const selectedIds = new Set();
+
+    document.getElementById('temp-toggle').addEventListener('change', function() {
+      tempMode = this.checked;
+      const entry = maps['map-left'];
+      if (tempMode) {
+        if (entry.currentCoords) {
+          // Add radius below the marker (remove marker, append radius, re-append marker)
+          entry.markerGroup.selectAll('circle.location-radius').remove();
+          const marker = entry.markerGroup.select('circle.location-marker');
+          const cx = +marker.attr('cx');
+          const cy = +marker.attr('cy');
+          const k = d3.zoomTransform(maps['map-left'].svg.node()).k;
+          entry.markerGroup.insert('circle', 'circle.location-marker')
+            .attr('class', 'location-radius')
+            .attr('cx', cx).attr('cy', cy)
+            .attr('r', 40 * k);
+          entry.onPlace(entry.currentCoords);
+        }
+      } else {
+        entry.markerGroup.selectAll('circle.location-radius').remove();
+        selectedIds.clear();
+        applyLineStyles(lines);
+        updateGlyphs();
+      }
+    });
+
+    function applyLineStyles(selection) {
+      selection
+        .attr('stroke', d => selectedIds.has(d.properties.id) ? '#ffd700' : 'gray')
+        .attr('stroke-width', d => selectedIds.has(d.properties.id) ? 2.5 : 1)
+        .attr('stroke-opacity', d => selectedIds.has(d.properties.id) ? 0.9 : 0.3);
+    }
+
+    const lines = gLeft.selectAll('path.hurricane-line')
       .data(lineFeatures)
       .join('path')
       .attr('class', 'hurricane-line')
       .attr('d', pathLeft)
       .attr('fill', 'none')
-      .attr('stroke', d => d.properties.id === 1 ? '#ff4b4b' : 'gray')
-      .attr('stroke-width', d => d.properties.id === 1 ? 2 : 1)
-      .attr('stroke-opacity', d => d.properties.id === 1 ? 0.6 : 0.3);
+      .attr('pointer-events', 'none');
 
-    // Draw glyphs on the right map
-    // TO DO: encode channels
-    const line1 = coneData.lines[0];
-    const { g: gRight, projection: projRight } = maps['map-right'];
-    const color = d3.scaleSequential()
-      .domain(d3.extent(line1.glyphs, d => d.temperature))
-      .interpolator(d3.interpolatePlasma);
-    const size = d3.scaleSequential()
-      .domain(d3.extent(line1.glyphs, d => d.wind_speed))
-      .range([5, 15]);
+    applyLineStyles(lines);
 
-    gRight.selectAll('circle.glyph')
-      .data(line1.glyphs)
-      .join('circle')
-      .attr('class', 'glyph')
-      .attr('cx', d => {
-        const coords = projRight([d.longitude, d.latitude]);
-        return coords ? coords[0] : 0;
+    // Invisible wide paths for generous hit detection
+    gLeft.selectAll('path.hurricane-hit')
+      .data(lineFeatures)
+      .join('path')
+      .attr('class', 'hurricane-hit')
+      .attr('d', pathLeft)
+      .attr('fill', 'none')
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 10)
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d) {
+        if (tempMode) return;
+        if (!selectedIds.has(d.properties.id) && !event.shiftKey) {
+          gLeft.selectAll('path.hurricane-line')
+            .filter(ld => ld.properties.id === d.properties.id)
+            .attr('stroke', '#ffe066')
+            .attr('stroke-width', 1.5)
+            .attr('stroke-opacity', 0.65);
+        }
       })
-      .attr('cy', d => {
-        const coords = projRight([d.longitude, d.latitude]);
-        return coords ? coords[1] : 0;
+      .on('mousemove', function(event, d) {
+        if (event.shiftKey) {
+          applyLineStyles(
+            gLeft.selectAll('path.hurricane-line')
+              .filter(ld => ld.properties.id === d.properties.id)
+          );
+        }
       })
-      .attr('r', d => size(d.wind_speed))
-      .attr('fill', d => color(d.temperature))
-      .attr('stroke', '#333')
-      .attr('stroke-width', 1)
-      .on('mouseover', (event, d) => {
-        tooltip.transition().duration(200).style('opacity', 1);
-        tooltip.html(`
-          <p><strong>Category:</strong> ${d.category}</p>
-          <p><strong>Wind Speed:</strong> ${d.wind_speed} mph</p>
-          <p><strong>Wind Gust:</strong> ${d.wind_gust} mph</p>
-          <p><strong>Precipitation:</strong> ${d.precipitation} (${d.precipitation_type.toLowerCase()})</p>
-          <p><strong>Event:</strong> ${d.event_code}</p>
-        `)
-        .style('left', (event.pageX + 15) + 'px')
-        .style('top', (event.pageY - 28) + 'px');
+      .on('mouseout', function(_event, d) {
+        applyLineStyles(
+          gLeft.selectAll('path.hurricane-line')
+            .filter(ld => ld.properties.id === d.properties.id)
+        );
       })
-      .on('mousemove', (event) => {
-        tooltip.style('left', (event.pageX + 15) + 'px')
-               .style('top', (event.pageY - 28) + 'px');
-      })
-      .on('mouseout', () => {
-        tooltip.transition().duration(200).style('opacity', 0);
+      .on('click', function(_event, d) {
+        if (tempMode) return;
+        const id = d.properties.id;
+        if (selectedIds.has(id)) {
+          selectedIds.delete(id);
+        } else {
+          selectedIds.add(id);
+        }
+        applyLineStyles(lines);
+        updateGlyphs();
       });
+
+    // Select lines within the location radius when a marker is placed
+    const BASE_RADIUS = 40;
+    maps['map-left'].onPlace = (markerCoords) => {
+      if (!tempMode) return;
+      selectedIds.clear();
+      lineFeatures.forEach(feature => {
+        const hit = feature.geometry.coordinates.some(([lon, lat]) => {
+          const [lpx, lpy] = maps['map-left'].projection([lon, lat]);
+          const dx = lpx - markerCoords[0];
+          const dy = lpy - markerCoords[1];
+          return Math.sqrt(dx * dx + dy * dy) <= BASE_RADIUS;
+        });
+        if (hit) selectedIds.add(feature.properties.id);
+      });
+      applyLineStyles(lines);
+      updateGlyphs();
+    };
+
+    // Drag-to-select box on the left map (hold Shift + drag)
+    const { svg: svgLeft, zoom: zoomLeft, projection: projLeft } = maps['map-left'];
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      // Clear selections
+      selectedIds.clear();
+      applyLineStyles(lines);
+      updateGlyphs();
+
+      // Reset zoom on both maps
+      Object.entries(maps).forEach(([_id, entry]) => {
+        entry.svg.transition().duration(500).call(entry.zoom.transform, d3.zoomIdentity);
+        entry.markerGroup.selectAll('circle.location-marker').remove();
+        entry.markerGroup.selectAll('circle.location-radius').remove();
+        entry.currentCoords = null;
+      });
+
+      // Clear search bar
+      searchBar.value = '';
+      suggestionsList.classList.add('hidden');
+    });
+
+    // Right-click anywhere on left map to deselect all
+    svgLeft.on('contextmenu', function(event) {
+      event.preventDefault();
+      selectedIds.clear();
+      applyLineStyles(lines);
+      updateGlyphs();
+    });
+
+    // Let zoom yield when shift is held so drag-select can take over
+    zoomLeft.filter(event => !event.shiftKey && !event.ctrlKey && !event.button);
+
+    // Selection rect drawn above everything else
+    const selectionRect = svgLeft.append('rect')
+      .attr('class', 'selection-rect')
+      .attr('pointer-events', 'none')
+      .style('display', 'none');
+
+    let dragOrigin = null;
+
+    svgLeft.call(
+      d3.drag()
+        .filter(event => !tempMode && event.shiftKey && event.button === 0)
+        .on('start', function(event) {
+          dragOrigin = [event.x, event.y];
+          selectionRect
+            .attr('x', event.x).attr('y', event.y)
+            .attr('width', 0).attr('height', 0)
+            .style('display', null);
+        })
+        .on('drag', function(event) {
+          const x = Math.min(event.x, dragOrigin[0]);
+          const y = Math.min(event.y, dragOrigin[1]);
+          const w = Math.abs(event.x - dragOrigin[0]);
+          const h = Math.abs(event.y - dragOrigin[1]);
+          selectionRect.attr('x', x).attr('y', y).attr('width', w).attr('height', h);
+        })
+        .on('end', function(event) {
+          selectionRect.style('display', 'none');
+
+          const x = Math.min(event.x, dragOrigin[0]);
+          const y = Math.min(event.y, dragOrigin[1]);
+          const w = Math.abs(event.x - dragOrigin[0]);
+          const h = Math.abs(event.y - dragOrigin[1]);
+          if (w < 5 || h < 5) return;
+
+          const transform = d3.zoomTransform(svgLeft.node());
+
+          lineFeatures.forEach(feature => {
+            const hit = feature.geometry.coordinates.some(([lon, lat]) => {
+              const [px, py] = projLeft([lon, lat]);
+              const [tx, ty] = transform.apply([px, py]);
+              return tx >= x && tx <= x + w && ty >= y && ty <= y + h;
+            });
+            if (hit) selectedIds.add(feature.properties.id);
+          });
+
+          applyLineStyles(lines);
+          updateGlyphs();
+        })
+    );
+
+    // Draw glyphs on the right map for a given line's data
+    const { g: gRight, projection: projRight } = maps['map-right'];
+
+    function drawGlyphs(lineData) {
+      if (!lineData) {
+        gRight.selectAll('circle.glyph').remove();
+        return;
+      }
+      const color = d3.scaleSequential()
+        .domain(d3.extent(lineData.glyphs, d => d.temperature))
+        .interpolator(d3.interpolatePlasma);
+      const size = d3.scaleLinear()
+        .domain(d3.extent(lineData.glyphs, d => d.wind_speed))
+        .range([5, 15]);
+
+      gRight.selectAll('circle.glyph')
+        .data(lineData.glyphs)
+        .join('circle')
+        .attr('class', 'glyph')
+        .attr('cx', d => {
+          const coords = projRight([d.longitude, d.latitude]);
+          return coords ? coords[0] : 0;
+        })
+        .attr('cy', d => {
+          const coords = projRight([d.longitude, d.latitude]);
+          return coords ? coords[1] : 0;
+        })
+        .attr('r', d => size(d.wind_speed))
+        .attr('fill', d => color(d.temperature))
+        .attr('stroke', '#333')
+        .attr('stroke-width', 1)
+        .on('mouseover', (event, d) => {
+          tooltip.transition().duration(200).style('opacity', 1);
+          tooltip.html(`
+            <p><strong>Category:</strong> ${d.category}</p>
+            <p><strong>Wind Speed:</strong> ${d.wind_speed} mph</p>
+            <p><strong>Wind Gust:</strong> ${d.wind_gust} mph</p>
+            <p><strong>Precipitation:</strong> ${d.precipitation} (${d.precipitation_type.toLowerCase()})</p>
+            <p><strong>Event:</strong> ${d.event_code}</p>
+          `)
+          .style('left', (event.pageX + 15) + 'px')
+          .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mousemove', (event) => {
+          tooltip.style('left', (event.pageX + 15) + 'px')
+                 .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mouseout', () => {
+          tooltip.transition().duration(200).style('opacity', 0);
+        });
+    }
+
+    // No glyphs shown until a line is selected
+    function updateGlyphs() {
+      if (selectedIds.size === 0) {
+        drawGlyphs(null);
+      } else {
+        const lastSelected = [...selectedIds].at(-1);
+        const lineData = coneData.lines.find(l => l.id === lastSelected);
+        drawGlyphs(lineData || null);
+      }
+    }
   }
 }
 
@@ -195,12 +398,24 @@ function placeMarker(lon, lat) {
     zoomToLocation(id, coords[0], coords[1]);
 
     // After zoom the location will be at the SVG center
+    markerGroup.selectAll('circle.location-radius').remove();
     markerGroup.selectAll('circle.location-marker').remove();
+    if (id === 'map-left' && tempMode) {
+      markerGroup.append('circle')
+        .attr('class', 'location-radius')
+        .attr('cx', width / 2)
+        .attr('cy', height / 2)
+        .attr('r', 40 * LEFT_ZOOM_SCALE);
+    }
+    // Marker always appended last so it sits on top of the radius
     markerGroup.append('circle')
       .attr('class', 'location-marker')
       .attr('cx', width / 2)
       .attr('cy', height / 2)
       .attr('r', 7);
+    if (id === 'map-left') {
+      if (entry.onPlace) entry.onPlace(coords);
+    }
   });
 }
 
