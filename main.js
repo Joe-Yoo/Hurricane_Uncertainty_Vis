@@ -144,21 +144,9 @@ async function init() {
 
     function applyLineStyles(selection) {
       selection
-        .attr('stroke', d => {
-          if (selectedIds.has(d.properties.id)) return '#ffd700';
-          if (d.properties.id === 1) return '#ff4b4b';
-          return 'gray';
-        })
-        .attr('stroke-width', d => {
-          if (selectedIds.has(d.properties.id)) return 2.5;
-          if (d.properties.id === 1) return 2;
-          return 1;
-        })
-        .attr('stroke-opacity', d => {
-          if (selectedIds.has(d.properties.id)) return 0.9;
-          if (d.properties.id === 1) return 0.6;
-          return 0.3;
-        });
+        .attr('stroke', d => selectedIds.has(d.properties.id) ? '#ffd700' : 'gray')
+        .attr('stroke-width', d => selectedIds.has(d.properties.id) ? 2.5 : 1)
+        .attr('stroke-opacity', d => selectedIds.has(d.properties.id) ? 0.9 : 0.3);
     }
 
     const lines = gLeft.selectAll('path.hurricane-line')
