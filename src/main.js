@@ -1,6 +1,8 @@
 const US_TOPO_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
+const WORLD_TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
 const maps = {};
+const tooltip = d3.select('body').append('div').attr('class', 'tooltip');
 
 async function createMap(containerId, { interactive = true } = {}) {
   const container = document.getElementById(containerId);
@@ -26,21 +28,39 @@ async function createMap(containerId, { interactive = true } = {}) {
     .attr('height', height)
     .attr('pointer-events', 'none');
 
-  const projection = d3.geoAlbersUsa()
-    .fitSize([width, height], { type: 'Sphere' });
+  const projection = d3.geoMercator();
 
   const path = d3.geoPath().projection(projection);
 
-  const us = await d3.json(US_TOPO_URL);
+  const [us, world] = await Promise.all([
+    d3.json(US_TOPO_URL),
+    d3.json(WORLD_TOPO_URL)
+  ]);
   const states = topojson.feature(us, us.objects.states);
+  const countries = topojson.feature(world, world.objects.countries);
 
-  projection.fitSize([width, height], states);
+  // Extend the map bounds to cover Southeast US, zoomed out 2x
+  const naBounds = {
+    type: "LineString",
+    coordinates: [[-105, 15], [-60, 45]]
+  };
+  projection.fitSize([width, height], naBounds);
+
+  g.selectAll('path.country')
+    .data(countries.features)
+    .join('path')
+    .attr('class', 'country')
+    .attr('d', path)
+    .attr('fill', '#d9e8f5')
+    .attr('stroke', '#999')
+    .attr('stroke-width', 0.5);
 
   g.selectAll('path.state')
     .data(states.features)
     .join('path')
     .attr('class', 'state')
-    .attr('d', path);
+    .attr('d', path)
+    .attr('fill', 'none');
 
 // Attach zoom to both maps; non-interactive map filters out user events
   const zoom = d3.zoom()
@@ -61,7 +81,7 @@ async function createMap(containerId, { interactive = true } = {}) {
 
   svg.call(zoom);
 
-  maps[containerId] = { projection, markerGroup, svg, zoom, g, width, height, currentCoords: null };
+  maps[containerId] = { projection, path, markerGroup, svg, zoom, g, width, height, currentCoords: null };
 }
 
 async function init() {
@@ -69,6 +89,83 @@ async function init() {
     createMap('map-left', { interactive: true }),
     createMap('map-right', { interactive: false }),
   ]);
+
+  const coneData = await d3.json('cone_data.json');
+  if (coneData && coneData.lines && coneData.lines.length > 0) {
+    // Draw all lines on the left map
+    const { g: gLeft, path: pathLeft } = maps['map-left'];
+    
+    // Parse the Mlon,lat Llon,lat SVG path strings back into coordinates for D3 mapping
+    const lineFeatures = coneData.lines.map(lineData => {
+      const coords = lineData.path.split(' ').map(pt => {
+        const [lon, lat] = pt.slice(1).split(',').map(Number);
+        return [lon, lat];
+      });
+      return {
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: coords },
+        properties: { id: lineData.id }
+      };
+    });
+    
+    // TO DO: implement selection; currently hardcoded to highlight line 1
+    gLeft.selectAll('path.hurricane-line')
+      .data(lineFeatures)
+      .join('path')
+      .attr('class', 'hurricane-line')
+      .attr('d', pathLeft)
+      .attr('fill', 'none')
+      .attr('stroke', d => d.properties.id === 1 ? '#ff4b4b' : 'gray')
+      .attr('stroke-width', d => d.properties.id === 1 ? 2 : 1)
+      .attr('stroke-opacity', d => d.properties.id === 1 ? 0.6 : 0.3);
+
+    // Draw glyphs on the right map
+    // TO DO: encode channels
+    const line1 = coneData.lines[0];
+    const { g: gRight, projection: projRight } = maps['map-right'];
+    const color = d3.scaleSequential()
+      .domain(d3.extent(line1.glyphs, d => d.temperature))
+      .interpolator(d3.interpolatePlasma);
+    const size = d3.scaleSequential()
+      .domain(d3.extent(line1.glyphs, d => d.wind_speed))
+      .range([5, 15]);
+
+    gRight.selectAll('circle.glyph')
+      .data(line1.glyphs)
+      .join('circle')
+      .attr('class', 'glyph')
+      .attr('cx', d => {
+        const coords = projRight([d.longitude, d.latitude]);
+        return coords ? coords[0] : 0;
+      })
+      .attr('cy', d => {
+        const coords = projRight([d.longitude, d.latitude]);
+        return coords ? coords[1] : 0;
+      })
+      .attr('r', d => size(d.wind_speed))
+      .attr('fill', d => color(d.temperature))
+      .attr('stroke', '#333')
+      .attr('stroke-width', 1)
+      .on('mouseover', (event, d) => {
+        tooltip.transition().duration(200).style('opacity', 1);
+        tooltip.html(`
+          <p><strong>Category:</strong> ${d.category}</p>
+          <p><strong>Wind Speed:</strong> ${d.wind_speed} mph</p>
+          <p><strong>Wind Gust:</strong> ${d.wind_gust} mph</p>
+          <p><strong>Precipitation:</strong> ${d.precipitation} (${d.precipitation_type.toLowerCase()})</p>
+          <p><strong>Event:</strong> ${d.event_code}</p>
+        `)
+        .style('left', (event.pageX + 15) + 'px')
+        .style('top', (event.pageY - 28) + 'px');
+      })
+      .on('mousemove', (event) => {
+        tooltip.style('left', (event.pageX + 15) + 'px')
+               .style('top', (event.pageY - 28) + 'px');
+      })
+      .on('mouseout', () => {
+        tooltip.transition().duration(200).style('opacity', 0);
+      });
+  }
 }
 
 init();
