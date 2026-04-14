@@ -108,63 +108,85 @@ async function init() {
       };
     });
     
-    // TO DO: implement selection; currently hardcoded to highlight line 1
-    gLeft.selectAll('path.hurricane-line')
-      .data(lineFeatures)
-      .join('path')
-      .attr('class', 'hurricane-line')
-      .attr('d', pathLeft)
-      .attr('fill', 'none')
-      .attr('stroke', d => d.properties.id === 1 ? '#ff4b4b' : 'gray')
-      .attr('stroke-width', d => d.properties.id === 1 ? 2 : 1)
-      .attr('stroke-opacity', d => d.properties.id === 1 ? 0.6 : 0.3);
+    let selectedLineId = 1;
 
-    // Draw glyphs on the right map
-    // TO DO: encode channels
-    const line1 = coneData.lines[0];
-    const { g: gRight, projection: projRight } = maps['map-right'];
-    const color = d3.scaleSequential()
-      .domain(d3.extent(line1.glyphs, d => d.temperature))
-      .interpolator(d3.interpolatePlasma);
-    const size = d3.scaleSequential()
-      .domain(d3.extent(line1.glyphs, d => d.wind_speed))
-      .range([5, 15]);
+    // Helper to draw left map lines based on selection state
+    function renderLines() {
+      gLeft.selectAll('path.hurricane-line')
+        .data(lineFeatures)
+        .join('path')
+        .attr('class', 'hurricane-line')
+        .attr('d', pathLeft)
+        .attr('fill', 'none')
+        .attr('stroke', d => d.properties.id === selectedLineId ? '#ff4b4b' : 'gray')
+        .attr('stroke-width', d => d.properties.id === selectedLineId ? 2 : 1)
+        .attr('stroke-opacity', d => d.properties.id === selectedLineId ? 0.8 : 0.3)
+        .attr('cursor', 'pointer')
+        .style('pointer-events', 'visibleStroke')
+        .on('click', (event, d) => {
+          selectedLineId = d.properties.id;
+          renderLines();
+          renderGlyphs();
+        });
+        
+      // Ensure the selected line is drawn on top
+      gLeft.selectAll('path.hurricane-line')
+        .filter(d => d.properties.id === selectedLineId)
+        .raise();
+    }
 
-    gRight.selectAll('circle.glyph')
-      .data(line1.glyphs)
-      .join('circle')
-      .attr('class', 'glyph')
-      .attr('cx', d => {
-        const coords = projRight([d.longitude, d.latitude]);
-        return coords ? coords[0] : 0;
-      })
-      .attr('cy', d => {
-        const coords = projRight([d.longitude, d.latitude]);
-        return coords ? coords[1] : 0;
-      })
-      .attr('r', d => size(d.wind_speed))
-      .attr('fill', d => color(d.temperature))
-      .attr('stroke', '#333')
-      .attr('stroke-width', 1)
-      .on('mouseover', (event, d) => {
-        tooltip.transition().duration(200).style('opacity', 1);
-        tooltip.html(`
-          <p><strong>Category:</strong> ${d.category}</p>
-          <p><strong>Wind Speed:</strong> ${d.wind_speed} mph</p>
-          <p><strong>Wind Gust:</strong> ${d.wind_gust} mph</p>
-          <p><strong>Precipitation:</strong> ${d.precipitation} (${d.precipitation_type.toLowerCase()})</p>
-          <p><strong>Event:</strong> ${d.event_code}</p>
-        `)
-        .style('left', (event.pageX + 15) + 'px')
-        .style('top', (event.pageY - 28) + 'px');
-      })
-      .on('mousemove', (event) => {
-        tooltip.style('left', (event.pageX + 15) + 'px')
-               .style('top', (event.pageY - 28) + 'px');
-      })
-      .on('mouseout', () => {
-        tooltip.transition().duration(200).style('opacity', 0);
-      });
+    // Helper to draw right map glyphs based on selection state
+    function renderGlyphs() {
+      const selectedLine = coneData.lines.find(l => l.id === selectedLineId) || coneData.lines[0];
+      const { g: gRight, projection: projRight } = maps['map-right'];
+      
+      const color = d3.scaleSequential()
+        .domain(d3.extent(selectedLine.glyphs, d => d.temperature))
+        .interpolator(d3.interpolatePlasma);
+      const size = d3.scaleSequential()
+        .domain(d3.extent(selectedLine.glyphs, d => d.wind_speed))
+        .range([5, 15]);
+
+      gRight.selectAll('circle.glyph')
+        .data(selectedLine.glyphs)
+        .join('circle')
+        .attr('class', 'glyph')
+        .attr('cx', d => {
+          const coords = projRight([d.longitude, d.latitude]);
+          return coords ? coords[0] : 0;
+        })
+        .attr('cy', d => {
+          const coords = projRight([d.longitude, d.latitude]);
+          return coords ? coords[1] : 0;
+        })
+        .attr('r', d => size(d.wind_speed))
+        .attr('fill', d => color(d.temperature))
+        .attr('stroke', '#333')
+        .attr('stroke-width', 1)
+        .on('mouseover', (event, d) => {
+          tooltip.transition().duration(200).style('opacity', 1);
+          tooltip.html(`
+            <p><strong>Category:</strong> ${d.category}</p>
+            <p><strong>Wind Speed:</strong> ${d.wind_speed} mph</p>
+            <p><strong>Wind Gust:</strong> ${d.wind_gust} mph</p>
+            <p><strong>Precipitation:</strong> ${d.precipitation} (${d.precipitation_type.toLowerCase()})</p>
+            <p><strong>Event:</strong> ${d.event_code}</p>
+          `)
+          .style('left', (event.pageX + 15) + 'px')
+          .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mousemove', (event) => {
+          tooltip.style('left', (event.pageX + 15) + 'px')
+                 .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mouseout', () => {
+          tooltip.transition().duration(200).style('opacity', 0);
+        });
+    }
+
+    // Initialize map views
+    renderLines();
+    renderGlyphs();
   }
 }
 
