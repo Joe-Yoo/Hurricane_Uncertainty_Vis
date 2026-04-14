@@ -89,6 +89,31 @@ body {
   background: #555;
 }
 
+.reset-btn {
+  margin-left: 8px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  background: #fff;
+  color: #333;
+  border: 1px solid #999;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.reset-btn:hover {
+  background: #f0f0f0;
+}
+
+.toggle-label {
+  margin-left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
 .container {
   display: flex;
   flex-direction: row;
@@ -153,9 +178,24 @@ body {
   pointer-events: none;
 }
 
+.location-radius {
+  fill: rgba(128, 0, 200, 0.15);
+  stroke: #8000c8;
+  stroke-width: 2px;
+  stroke-dasharray: 6, 4;
+  pointer-events: none;
+}
+
 h2 {
   margin-bottom: 16px;
   font-size: 1.4rem;
+}
+
+.selection-rect {
+  fill: rgba(100, 160, 255, 0.12);
+  stroke: #4488ff;
+  stroke-width: 1.5px;
+  stroke-dasharray: 5, 3;
 }
 
 .tooltip {
