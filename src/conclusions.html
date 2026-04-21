@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hurricane Uncertainty Vis — Conclusions</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 48px 16px;
+      background: #f4f8fc;
+      font-family: sans-serif;
+      color: #333;
+      overflow-y: auto;
+    }
+
+    .conclusions-card {
+      max-width: 680px;
+      width: 90%;
+      background: #fff;
+      border-radius: 16px;
+      padding: 48px 56px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    .conclusions-card h1 {
+      font-size: 2rem;
+      color: #4a6fa5;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .conclusions-card .subtitle {
+      font-size: 1rem;
+      color: #888;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .conclusions-card h2 {
+      font-size: 1.1rem;
+      color: #4a6fa5;
+      margin: 28px 0 8px;
+    }
+
+    .conclusions-card p {
+      font-size: 0.97rem;
+      color: #555;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    .conclusions-card .divider {
+      border: none;
+      border-top: 1px solid #D9E8F5;
+      margin: 28px 0;
+    }
+
+    .nav-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 36px;
+    }
+
+    .btn-nav {
+      display: inline-block;
+      padding: 10px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 999px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn-primary {
+      background: #4a6fa5;
+      color: #fff;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background: #3a5f95;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: #4a6fa5;
+      border: 1px solid #D9E8F5;
+    }
+
+    .btn-secondary:hover {
+      background: #D9E8F5;
+    }
+  </style>
+</head>
+<body>
+  <div class="conclusions-card">
+    <h1>Conclusions</h1>
+    <p class="subtitle">What we learned from exploring hurricane track uncertainty</p>
+
+    <hr class="divider" />
+
+    <h2>Spatial Uncertainty</h2>
+    <p>
+      Ensemble track models reveal a wide cone of possible hurricane paths.
+      Even small differences in initial atmospheric conditions can lead to
+      substantially different landfall locations within 48–72 hours of forecast.
+    </p>
+
+    <h2>Attribute Variation Across Tracks</h2>
+    <p>
+      Tracks that appear spatially similar can differ significantly in
+      predicted wind speed, temperature, and precipitation. Relying on a
+      single "best track" forecast can therefore underestimate the range of
+      hazardous conditions a location may face.
+    </p>
+
+    <h2>Location-Based Filtering</h2>
+    <p>
+      Filtering ensemble members by proximity to a user-defined location
+      provides a more targeted picture of the risk posed to a specific
+      community — a useful complement to traditional cone-of-uncertainty maps.
+    </p>
+
+    <h2>Design Takeaways</h2>
+    <p>
+      Linked views — spatial on the left, attribute-encoded on the right —
+      help users connect geographic patterns with meteorological meaning.
+      Interaction modes (self-select vs. within-radius) accommodate both
+      exploratory and task-focused analysis styles.
+    </p>
+
+    <hr class="divider" />
+
+    <div class="nav-links">
+      <a class="btn-nav btn-secondary" href="index.html">Back to Visualization</a>
+      <a class="btn-nav btn-primary" href="landing.html">Back to Introduction</a>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a class="btn-nav btn-primary" href="#" id="survey-btn">Take the Survey</a>
+    </div>
+  </div>
+</body>
+</html>
