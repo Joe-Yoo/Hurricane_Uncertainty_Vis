@@ -272,6 +272,7 @@ async function init() {
     // Right-click anywhere on left map to deselect all
     svgLeft.on('contextmenu', function(event) {
       event.preventDefault();
+      if (tempMode) return;
       selectedIds.clear();
       applyLineStyles(lines);
       updateGlyphs();

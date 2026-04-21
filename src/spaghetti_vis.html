@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hurricane Uncertainty Vis</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="search-wrapper">
+      <input type="text" id="search-bar" class="search-bar" placeholder="Search location..." autocomplete="off" />
+      <ul id="suggestions" class="suggestions hidden"></ul>
+    </div>
+    <button id="search-btn" class="search-btn">Search</button>
+    <button id="reset-btn" class="reset-btn">Reset</button>
+  </header>
+
+  <div class="container">
+    <section class="panel" id="left-panel" style="flex: 1;">
+      <div class="box">
+        <div id="map-left" class="map-container"></div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="vis-footer">
+    <a class="btn-prev" href="cone_vis.html">Previous</a>
+    <span class="footer-label">2 / 3</span>
+    <a class="btn-next" href="interactive_vis.html">Next</a>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <script src="spaghetti_vis.js"></script>
+</body>
+</html>
