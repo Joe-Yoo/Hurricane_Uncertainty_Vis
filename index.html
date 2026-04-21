@@ -38,10 +38,58 @@
 
     <section class="panel" id="right-panel">
       <div class="box">
-        <h2>Right Section</h2>
+        <h2>Ensemble Detail</h2>
         <div id="map-right" class="map-container no-interact"></div>
       </div>
     </section>
+
+    <aside class="settings-sidebar">
+      <div class="settings-group">
+        <h3>Map Layers</h3>
+        <label class="control-item">
+          <input type="checkbox" id="layer-paths" checked />
+          Ensemble Paths
+        </label>
+        <label class="control-item">
+          <input type="checkbox" id="layer-glyphs" checked />
+          Wind Glyphs
+        </label>
+        <label class="control-item">
+          <input type="checkbox" id="layer-currents" />
+          Animated Currents
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <h3>Glyph Style</h3>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="glyph-style" value="barbs" checked />
+            Wind Barbs
+          </label>
+          <label>
+            <input type="radio" name="glyph-style" value="circles" />
+            Simple Circles
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>Glyph Properties</h3>
+        <label class="control-item">
+          <input type="checkbox" id="prop-temp" checked />
+          Temperature Color
+        </label>
+        <label class="control-item">
+          <input type="checkbox" id="prop-precip" />
+          Precipitation Aura
+        </label>
+        <label class="control-item">
+          <input type="checkbox" id="prop-labels" />
+          Value Labels
+        </label>
+      </div>
+    </aside>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
