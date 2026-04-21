@@ -241,6 +241,55 @@ h2 {
   stroke-dasharray: 5, 3;
 }
 
+.vis-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 24px;
+  background: #ffffff;
+  border-top: 1px solid #D9E8F5;
+  flex-shrink: 0;
+}
+
+.vis-footer .footer-label {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.vis-footer a {
+  padding: 7px 22px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.vis-footer a.btn-prev {
+  background: #fff;
+  color: #4a6fa5;
+  border: 1px solid #D9E8F5;
+}
+
+.vis-footer a.btn-prev:hover {
+  background: #D9E8F5;
+}
+
+.vis-footer a.btn-next {
+  background: #4a6fa5;
+  color: #fff;
+  border: none;
+}
+
+.vis-footer a.btn-next:hover {
+  background: #3a5f95;
+}
+
+.vis-footer a.btn-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 .tooltip {
   position: absolute;
   background-color: rgba(255, 255, 255, 0.95);
