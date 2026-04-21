@@ -239,6 +239,12 @@ body {
   stroke-width: 2px;
 }
 
+.hurricane-line {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.2s, stroke-width 0.2s, stroke-opacity 0.2s;
+}
+
 .location-marker {
   fill: #e63946;
   stroke: #fff;

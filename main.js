@@ -168,10 +168,13 @@ async function init() {
       }
     });
 
-    document.getElementById('barb-toggle').addEventListener('change', function() {
-      barbMode = this.checked;
-      updateGlyphs();
-    });
+    const barbToggle = document.getElementById('barb-toggle');
+    if (barbToggle) {
+      barbToggle.addEventListener('change', function() {
+        barbMode = this.checked;
+        updateGlyphs();
+      });
+    }
 
     function applyLineStyles(selection) {
       selection
