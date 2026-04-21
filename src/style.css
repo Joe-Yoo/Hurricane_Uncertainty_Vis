@@ -78,7 +78,8 @@ body {
   margin-left: 8px;
   padding: 8px 18px;
   font-size: 1rem;
-  background: #333;
+  font-weight: 600;
+  background: #4a6fa5;
   color: #fff;
   border: none;
   border-radius: 20px;
@@ -86,7 +87,74 @@ body {
 }
 
 .search-btn:hover {
-  background: #555;
+  background: #3a5f95;
+}
+
+.reset-btn {
+  margin-left: 8px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #fff;
+  color: #4a6fa5;
+  border: 1px solid #D9E8F5;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.reset-btn:hover {
+  background: #D9E8F5;
+}
+
+.mode-toggle-pill {
+  margin-left: 16px;
+  display: flex;
+  align-items: center;
+  background: #D9E8F5;
+  border-radius: 999px;
+  padding: 4px;
+  gap: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pill-option {
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #4a6fa5;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.pill-option.active {
+  background: #fff;
+  color: #4a6fa5;
+}
+
+.radius-slider-wrap {
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#radius-slider {
+  width: 120px;
+  accent-color: #4a6fa5;
+  cursor: pointer;
+}
+
+#radius-slider:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+#radius-label {
+  font-size: 0.9rem;
+  color: #4a6fa5;
+  min-width: 28px;
 }
 
 .reset-btn {
