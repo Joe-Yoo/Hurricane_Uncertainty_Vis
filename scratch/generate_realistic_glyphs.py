@@ -53,27 +53,35 @@ def process_data():
                 continue
 
         new_glyphs = []
-        for glyph in line['glyphs']:
-            glon = glyph['longitude']
-            glat = glyph['latitude']
-            dist = glyph['proximity_to_eye']
-            
-            # 1. Wind Speed (Modified Rankine Vortex)
-            if dist <= 0:
-                wind_speed = 0
-            elif dist < RMW:
-                # Linear increase inside the eyewall
-                wind_speed = VMAX * (dist / RMW)
-            else:
-                # Decay outside the eyewall (r^-0.5)
-                wind_speed = VMAX * math.pow(RMW / dist, 0.5)
-            
-            # Add some slight ambient wind variation
-            wind_speed += 5.0
-            
-            # 2. Wind Flow Angle
-            closest_eye = get_closest_point(glon, glat, path_coords)
-            if closest_eye:
+        
+        # Define a denser grid (e.g., 1.5 degrees instead of 3.0)
+        lon_step = 1.5
+        lat_step = 1.5
+        lon_vals = [round(-105.0 + i * lon_step, 2) for i in range(int(45 / lon_step) + 1)]
+        lat_vals = [round(15.0 + i * lat_step, 2) for i in range(int(30 / lat_step) + 1)]
+        
+        for glon in lon_vals:
+            for glat in lat_vals:
+                closest_eye = get_closest_point(glon, glat, path_coords)
+                if not closest_eye:
+                    continue
+                    
+                dist = distance(glon, glat, closest_eye[0], closest_eye[1])
+                
+                # 1. Wind Speed (Modified Rankine Vortex)
+                if dist <= 0:
+                    wind_speed = 0
+                elif dist < RMW:
+                    # Linear increase inside the eyewall
+                    wind_speed = VMAX * (dist / RMW)
+                else:
+                    # Decay outside the eyewall (r^-0.5)
+                    wind_speed = VMAX * math.pow(RMW / dist, 0.5)
+                
+                # Add some slight ambient wind variation
+                wind_speed += 5.0
+                
+                # 2. Wind Flow Angle
                 dx = glon - closest_eye[0]
                 dy = glat - closest_eye[1]
                 
@@ -92,24 +100,28 @@ def process_data():
                         flow_angle += 360
                     elif flow_angle >= 360:
                         flow_angle -= 360
-            else:
-                flow_angle = glyph['wind_flow_angle']
 
-            # 3. Precipitation
-            # Scale 0.0 to 4.0 based on proximity to eyewall
-            # Max at RMW, decays quickly outside and inside
-            precip = 4.0 * math.exp(-abs(dist - RMW) / 0.8)
-            
-            # 4. Update glyph
-            new_glyph = glyph.copy()
-            new_glyph['wind_speed'] = round(wind_speed)
-            new_glyph['wind_flow_angle'] = round(flow_angle, 1)
-            new_glyph['precipitation'] = round(precip, 2)
-            new_glyph['category'] = calculate_category(wind_speed)
-            new_glyph['wind_gust'] = round(wind_speed * 1.25)
-            new_glyph['temperature'] = round(28.0 - (wind_speed / 25.0), 1)
-            
-            new_glyphs.append(new_glyph)
+                # 3. Precipitation
+                # Scale 0.0 to 4.0 based on proximity to eyewall
+                # Max at RMW, decays quickly outside and inside
+                precip = 4.0 * math.exp(-abs(dist - RMW) / 0.8)
+                
+                # 4. Create new glyph dictionary
+                new_glyph = {
+                    "longitude": glon,
+                    "latitude": glat,
+                    "proximity_to_eye": round(dist, 2),
+                    "wind_speed": round(wind_speed),
+                    "wind_flow_angle": round(flow_angle, 1),
+                    "precipitation": round(precip, 2),
+                    "precipitation_type": "RAIN",
+                    "category": calculate_category(wind_speed),
+                    "wind_gust": round(wind_speed * 1.25),
+                    "temperature": round(28.0 - (wind_speed / 25.0), 1),
+                    "event_code": "WARNING" if wind_speed > 74 else ("ADVISORY" if wind_speed > 50 else "NONE")
+                }
+                
+                new_glyphs.append(new_glyph)
         
         new_line = line.copy()
         new_line['glyphs'] = new_glyphs
