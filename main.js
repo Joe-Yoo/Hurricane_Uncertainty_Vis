@@ -4,6 +4,12 @@ const WORLD_TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110
 const maps = {};
 const tooltip = d3.select('body').append('div').attr('class', 'tooltip');
 let tempMode = false;
+const BASE_RADIUS = () => {
+  const km = Number(document.getElementById('radius-slider').value);
+  const proj = maps['map-left'] && maps['map-left'].projection;
+  if (!proj) return km;
+  return km * proj.scale() / 6371;
+};
 
 async function createMap(containerId, { interactive = true } = {}) {
   const container = document.getElementById(containerId);
@@ -81,7 +87,7 @@ async function createMap(containerId, { interactive = true } = {}) {
           markerGroup.select('circle.location-radius')
             .attr('cx', cx)
             .attr('cy', cy)
-            .attr('r', 40 * event.transform.k);
+            .attr('r', BASE_RADIUS() * event.transform.k);
         }
       }
     });
@@ -117,8 +123,27 @@ async function init() {
     
     const selectedIds = new Set();
 
-    document.getElementById('temp-toggle').addEventListener('change', function() {
-      tempMode = this.checked;
+    const radiusSlider = document.getElementById('radius-slider');
+    const radiusLabel = document.getElementById('radius-label');
+    radiusSlider.addEventListener('input', function() {
+      radiusLabel.textContent = `${this.value} km`;
+      const entry = maps['map-left'];
+      if (!entry) return;
+      const k = d3.zoomTransform(entry.svg.node()).k;
+      entry.markerGroup.select('circle.location-radius').attr('r', BASE_RADIUS() * k);
+      if (entry.currentCoords && entry.onPlace) entry.onPlace(entry.currentCoords);
+    });
+
+    document.getElementById('temp-toggle').addEventListener('click', function(e) {
+      const option = e.target.closest('.pill-option');
+      if (!option) return;
+      const newMode = option.dataset.mode === 'temp';
+      if (newMode === tempMode) return;
+      tempMode = newMode;
+      radiusSlider.disabled = !tempMode;
+      this.querySelectorAll('.pill-option').forEach(el =>
+        el.classList.toggle('active', el.dataset.mode === (tempMode ? 'temp' : 'normal'))
+      );
       const entry = maps['map-left'];
       if (tempMode) {
         if (entry.currentCoords) {
@@ -131,7 +156,7 @@ async function init() {
           entry.markerGroup.insert('circle', 'circle.location-marker')
             .attr('class', 'location-radius')
             .attr('cx', cx).attr('cy', cy)
-            .attr('r', 40 * k);
+            .attr('r', BASE_RADIUS() * k);
           entry.onPlace(entry.currentCoords);
         }
       } else {
@@ -206,7 +231,6 @@ async function init() {
       });
 
     // Select lines within the location radius when a marker is placed
-    const BASE_RADIUS = 40;
     maps['map-left'].onPlace = (markerCoords) => {
       if (!tempMode) return;
       selectedIds.clear();
@@ -215,7 +239,7 @@ async function init() {
           const [lpx, lpy] = maps['map-left'].projection([lon, lat]);
           const dx = lpx - markerCoords[0];
           const dy = lpy - markerCoords[1];
-          return Math.sqrt(dx * dx + dy * dy) <= BASE_RADIUS;
+          return Math.sqrt(dx * dx + dy * dy) <= BASE_RADIUS();
         });
         if (hit) selectedIds.add(feature.properties.id);
       });
@@ -404,7 +428,7 @@ function placeMarker(lon, lat) {
         .attr('class', 'location-radius')
         .attr('cx', width / 2)
         .attr('cy', height / 2)
-        .attr('r', 40 * LEFT_ZOOM_SCALE);
+        .attr('r', BASE_RADIUS() * LEFT_ZOOM_SCALE);
     }
     // Marker always appended last so it sits on top of the radius
     markerGroup.append('circle')
