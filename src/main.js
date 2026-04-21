@@ -10,6 +10,7 @@ const BASE_RADIUS = () => {
   if (!proj) return km;
   return km * proj.scale() / 6371;
 };
+let barbMode = true;
 
 async function createMap(containerId, { interactive = true } = {}) {
   const container = document.getElementById(containerId);
@@ -165,6 +166,11 @@ async function init() {
         applyLineStyles(lines);
         updateGlyphs();
       }
+    });
+
+    document.getElementById('barb-toggle').addEventListener('change', function() {
+      barbMode = this.checked;
+      updateGlyphs();
     });
 
     function applyLineStyles(selection) {
@@ -341,40 +347,66 @@ async function init() {
         allGlyphs = allGlyphs.concat(l.glyphs);
       });
 
+      // Clear both simple circles and group logic to prevent rendering overlaps between line shifts
+      gRight.selectAll('circle.glyph').remove();
+      gRight.selectAll('g.glyph-group').remove();
+
       if (allGlyphs.length === 0) {
-        gRight.selectAll('circle.glyph').remove();
         return;
       }
       
       const color = d3.scaleSequential()
         .domain(d3.extent(allGlyphs, d => d.temperature))
         .interpolator(d3.interpolatePlasma);
-      const size = d3.scaleLinear()
-        .domain(d3.extent(allGlyphs, d => d.wind_speed))
-        .range([5, 15]);
 
-      gRight.selectAll('circle.glyph')
+      function getWindBarbPath(speed) {
+        let knots = Math.round(speed);
+        if (knots < 5) return "M0,0 A2,2 0 1,1 0,0.1 Z"; // Calm
+
+        let path = "M0,0 L0,-16 "; // main staff
+        let yOffset = -16;
+        
+        let fifties = Math.floor(knots / 50);
+        knots %= 50;
+        let tens = Math.floor(knots / 10);
+        knots %= 10;
+        let fives = Math.floor(knots / 5);
+        
+        for (let i=0; i<fifties; i++) {
+          path += `M0,${yOffset} L7,${yOffset+1} L0,${yOffset+3} `;
+          yOffset += 4;
+        }
+        for (let i=0; i<tens; i++) {
+          path += `M0,${yOffset} L8,${yOffset-3} `;
+          yOffset += 3;
+        }
+        for (let i=0; i<fives; i++) {
+          path += `M0,${yOffset+1} L5,${yOffset-1} `;
+          yOffset += 3;
+        }
+        return path;
+      }
+
+      const glyphGroups = gRight.selectAll('g.glyph-group')
         .data(allGlyphs)
-        .join('circle')
-        .attr('class', 'glyph')
-        .attr('cx', d => {
+        .join('g')
+        .attr('class', 'glyph-group')
+        .attr('transform', d => {
           const coords = projRight([d.longitude, d.latitude]);
-          return coords ? coords[0] : 0;
+          if (!coords) return `translate(-9999,-9999)`;
+          // Revert rotation if fallback circles are toggled
+          return barbMode ? `translate(${coords[0]}, ${coords[1]}) rotate(${d.wind_flow_angle})` 
+                          : `translate(${coords[0]}, ${coords[1]})`;
         })
-        .attr('cy', d => {
-          const coords = projRight([d.longitude, d.latitude]);
-          return coords ? coords[1] : 0;
-        })
-        .attr('r', d => size(d.wind_speed))
-        .attr('fill', d => color(d.temperature))
-        .attr('stroke', '#333')
-        .attr('stroke-width', 1)
+        .style('cursor', 'pointer')
         .on('mouseover', (event, d) => {
           tooltip.transition().duration(200).style('opacity', 1);
           tooltip.html(`
             <p><strong>Category:</strong> ${d.category}</p>
             <p><strong>Wind Speed:</strong> ${d.wind_speed} mph</p>
-            <p><strong>Wind Gust:</strong> ${d.wind_gust} mph</p>
+            <p><strong>Wind Flow Dir:</strong> ${d.wind_flow_angle}°</p>
+            <p><strong>Temperature:</strong> ${d.temperature}°C</p>
+            <p><strong>Distance to Eye:</strong> ${d.proximity_to_eye}°</p>
             <p><strong>Precipitation:</strong> ${d.precipitation} (${d.precipitation_type.toLowerCase()})</p>
             <p><strong>Event:</strong> ${d.event_code}</p>
           `)
@@ -388,6 +420,30 @@ async function init() {
         .on('mouseout', () => {
           tooltip.transition().duration(200).style('opacity', 0);
         });
+
+      if (barbMode) {
+        glyphGroups.append('path')
+          .attr('d', d => getWindBarbPath(d.wind_speed))
+          .attr('stroke', d => color(d.temperature))
+          .attr('stroke-width', 1.5)
+          .attr('stroke-linejoin', 'round')
+          .attr('fill', d => d.wind_speed >= 50 ? color(d.temperature) : 'none');
+
+        // Invisible hit-box circle for robust tooltip triggering across thin paths
+        glyphGroups.append('circle')
+          .attr('r', 12)
+          .attr('fill', 'transparent');
+      } else {
+        const size = d3.scaleLinear()
+          .domain(d3.extent(allGlyphs, d => d.wind_speed))
+          .range([5, 15]);
+
+        glyphGroups.append('circle')
+          .attr('r', d => size(d.wind_speed))
+          .attr('fill', d => color(d.temperature))
+          .attr('stroke', '#333')
+          .attr('stroke-width', 1);
+      }
     }
 
     updateGlyphs();
