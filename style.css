@@ -248,6 +248,20 @@ body {
   overflow-y: auto;
 }
 
+.reminder-box {
+  background: rgba(252, 141, 89, 0.15);
+  border-left: 3px solid #fc8d59;
+  padding: 12px 15px;
+  font-size: 0.9em;
+  color: #141010;
+  line-height: 1.4;
+  border-radius: 0 4px 4px 0;
+}
+
+.reminder-box.hidden {
+  display: none;
+}
+
 .settings-group h3 {
   font-size: 0.9rem;
   text-transform: uppercase;

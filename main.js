@@ -363,13 +363,25 @@ async function init() {
         }
       })
       .on('mouseout', function(_event, d) {
+        if (tempMode) return;
         applyLineStyles(gLeft.selectAll('path.hurricane-line').filter(ld => ld.properties.id === d.properties.id));
       })
       .on('click', function(_event, d) {
         if (tempMode) return;
         const id = d.properties.id;
-        if (selectedIds.has(id)) selectedIds.delete(id);
-        else selectedIds.add(id);
+        
+        if (!maps['map-left'].currentCoords) {
+          if (selectedIds.has(id)) {
+            selectedIds.delete(id);
+          } else {
+            selectedIds.clear();
+            selectedIds.add(id);
+          }
+        } else {
+          if (selectedIds.has(id)) selectedIds.delete(id);
+          else selectedIds.add(id);
+        }
+        
         applyLineStyles(lines);
         updateGlyphs();
       });
@@ -399,8 +411,19 @@ async function init() {
       if (selectedLines.length > 0) {
         const gridMap = new Map();
         
+        const { svg: svgRight, projection: projRight, width, height, targetTransform } = maps['map-right'];
+        const transform = targetTransform || d3.zoomTransform(svgRight.node());
+        const margin = 50;
+
         selectedLines.forEach(l => {
           l.glyphs.forEach(g => {
+            const coords = projRight([g.longitude, g.latitude]);
+            if (!coords) return;
+            
+            const sx = transform.applyX(coords[0]);
+            const sy = transform.applyY(coords[1]);
+            if (sx < -margin || sx > width + margin || sy < -margin || sy > height + margin) return;
+
             const key = `${g.longitude.toFixed(2)},${g.latitude.toFixed(2)}`;
             if (!gridMap.has(key)) {
               gridMap.set(key, {
@@ -529,10 +552,11 @@ async function init() {
 
       if (settings.props.prox) {
         glyphGroups.append('circle')
-          .attr('r', 16)
+          .attr('r', 24)
           .attr('fill', d => colorScale(d.proximity_to_eye))
-          .attr('fill-opacity', 0.4)
-          .style('mix-blend-mode', 'multiply');
+          .attr('fill-opacity', 0.45)
+          .style('mix-blend-mode', 'multiply')
+          .style('filter', 'blur(12px)');
       }
 
       if (settings.props.icon) {
@@ -602,7 +626,9 @@ function zoomToLocation(mapId, px, py) {
   const scale = mapId === 'map-left' ? LEFT_ZOOM_SCALE : RIGHT_ZOOM_SCALE;
   const tx = width / 2 - scale * px;
   const ty = height / 2 - scale * py;
-  svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+  const targetTransform = d3.zoomIdentity.translate(tx, ty).scale(scale);
+  maps[mapId].targetTransform = targetTransform;
+  svg.transition().duration(750).call(zoom.transform, targetTransform);
 }
 
 function placeMarker(lon, lat) {
@@ -619,6 +645,12 @@ function placeMarker(lon, lat) {
     }
     markerGroup.append('circle').attr('class', 'location-marker').attr('cx', width/2).attr('cy', height/2).attr('r', 7);
     if (id === 'map-left' && entry.onPlace) entry.onPlace(coords);
+  });
+  
+  const reminder = document.getElementById('selection-reminder');
+  if (reminder) reminder.classList.add('hidden');
+  document.querySelectorAll('.settings-sidebar input[type="checkbox"]').forEach(cb => {
+    cb.disabled = false;
   });
 }
 

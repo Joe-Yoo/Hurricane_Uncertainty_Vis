@@ -27,7 +27,7 @@
   <div class="container">
     <section class="panel" id="left-panel">
       <div class="box">
-        <h2>Left Section</h2>
+        <h2>Predicted Hurricane Paths</h2>
         <div id="map-left" class="map-container"></div>
       </div>
     </section>
@@ -40,15 +40,19 @@
     </section>
 
     <aside class="settings-sidebar">
+      <div id="selection-reminder" class="reminder-box">
+        Please select a location on the left map to enable controls.
+      </div>
+
       <div class="settings-group">
         <h3>Map Layers</h3>
 
         <label class="control-item">
-          <input type="checkbox" id="layer-glyphs" checked />
+          <input type="checkbox" id="layer-glyphs" checked disabled />
           Wind Glyphs
         </label>
         <label class="control-item">
-          <input type="checkbox" id="layer-currents" checked/>
+          <input type="checkbox" id="layer-currents" checked disabled />
           Animated Currents
         </label>
       </div>
@@ -56,15 +60,15 @@
       <div class="settings-group">
         <h3>Glyph Properties</h3>
         <label class="control-item">
-          <input type="checkbox" id="prop-prox" checked />
+          <input type="checkbox" id="prop-prox" checked disabled />
           Eye Proximity Heatmap
         </label>
         <label class="control-item">
-          <input type="checkbox" id="prop-icon" checked />
+          <input type="checkbox" id="prop-icon" checked disabled />
           Event Icons
         </label>
         <label class="control-item">
-          <input type="checkbox" id="prop-barbs" />
+          <input type="checkbox" id="prop-barbs" checked disabled />
           Wind Barbs
         </label>
       </div>
