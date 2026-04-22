@@ -477,3 +477,100 @@ h2 {
   font-weight: 700;
   color: #1a1a1a;
 }
+
+.how-to-use-btn {
+  margin-left: auto;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #fff;
+  color: #4a6fa5;
+  border: 1px solid #D9E8F5;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.how-to-use-btn:hover {
+  background: #D9E8F5;
+}
+
+.how-to-use-tooltip {
+  position: fixed;
+  top: 70px;
+  right: 24px;
+  z-index: 2000;
+  width: 340px;
+}
+
+.how-to-use-tooltip.hidden {
+  display: none;
+}
+
+.how-to-use-content {
+  background: #fff;
+  border: 1px solid #D9E8F5;
+  border-radius: 12px;
+  padding: 20px 24px 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  position: relative;
+  font-size: 0.9rem;
+  color: #444;
+  line-height: 1.6;
+}
+
+.how-to-use-content h3 {
+  margin: 0 0 12px;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+.how-to-use-content p {
+  margin: 0 0 10px;
+}
+
+.how-to-use-content p:last-child {
+  margin-bottom: 0;
+}
+
+.how-to-use-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.how-to-use-close:hover {
+  color: #333;
+}
+
+.how-to-use-content .tooltip-section-label {
+  margin: 12px 0 4px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.how-to-use-content ul {
+  margin: 0 0 4px;
+  padding-left: 18px;
+}
+
+.how-to-use-content ul li {
+  margin-bottom: 4px;
+}
+
+.how-to-use-content kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  color: #333;
+}

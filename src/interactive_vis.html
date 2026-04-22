@@ -19,10 +19,29 @@
       <span class="pill-option" data-mode="temp">Within Radius</span>
     </div>
     <div class="radius-slider-wrap">
-      <input type="range" id="radius-slider" min="10" max="2000" value="300" step="10" disabled />
+      <input type="range" id="radius-slider" min="10" max="1000" value="300" step="10" disabled />
       <span id="radius-label">300 km</span>
     </div>
+    <button id="how-to-use-btn" class="how-to-use-btn">How to use</button>
   </header>
+
+  <div id="how-to-use-tooltip" class="how-to-use-tooltip hidden">
+    <div class="how-to-use-content">
+      <button id="how-to-use-close" class="how-to-use-close" aria-label="Close">&#x2715;</button>
+      <h3>How to Use</h3>
+      <p class="tooltip-section-label">Self-Select</p>
+      <ul>
+        <li>Click on an individual line to select or de-select it.</li>
+        <li>Press <kbd>Shift</kbd> + Drag your mouse to select multiple lines.</li>
+        <li>Right click to deselect lines.</li>
+      </ul>
+      <p class="tooltip-section-label">Within Radius</p>
+      <ul>
+        <li>Drag the slider to change the radius.</li>
+        <li>You are unable to select/de-select individual lines.</li>
+      </ul>
+    </div>
+  </div>
 
   <div class="container">
     <section class="panel" id="left-panel">
@@ -111,8 +130,21 @@
     </aside>
   </div>
 
+  <footer class="vis-footer">
+    <a class="btn-prev" href="spaghetti_vis.html">Previous</a>
+    <span class="footer-label">3 / 3</span>
+    <a class="btn-next" href="conclusions.html">Next</a>
+  </footer>
+
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
   <script src="main.js"></script>
+  <script>
+    const howToUseBtn = document.getElementById('how-to-use-btn');
+    const howToUseTooltip = document.getElementById('how-to-use-tooltip');
+    const howToUseClose = document.getElementById('how-to-use-close');
+    howToUseBtn.addEventListener('click', () => howToUseTooltip.classList.toggle('hidden'));
+    howToUseClose.addEventListener('click', () => howToUseTooltip.classList.add('hidden'));
+  </script>
 </body>
 </html>
