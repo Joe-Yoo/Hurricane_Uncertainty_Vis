@@ -394,23 +394,87 @@ async function init() {
 
     function updateGlyphs() {
       const selectedLines = coneData.lines.filter(l => selectedIds.has(l.id));
-      let allGlyphs = [];
-      selectedLines.forEach(l => { allGlyphs = allGlyphs.concat(l.glyphs); });
+      let aggregatedGlyphs = [];
+
+      if (selectedLines.length > 0) {
+        const gridMap = new Map();
+        
+        selectedLines.forEach(l => {
+          l.glyphs.forEach(g => {
+            const key = `${g.longitude.toFixed(2)},${g.latitude.toFixed(2)}`;
+            if (!gridMap.has(key)) {
+              gridMap.set(key, {
+                longitude: g.longitude,
+                latitude: g.latitude,
+                count: 0,
+                proximity_to_eye_sum: 0,
+                wind_speed_sum: 0,
+                precipitation_sum: 0,
+                wind_u_sum: 0,
+                wind_v_sum: 0,
+                has_warning: false,
+                has_advisory: false
+              });
+            }
+            const agg = gridMap.get(key);
+            agg.count++;
+            agg.proximity_to_eye_sum += g.proximity_to_eye;
+            agg.wind_speed_sum += g.wind_speed;
+            agg.precipitation_sum += g.precipitation;
+            
+            const angleRad = (g.wind_flow_angle - 90) * (Math.PI / 180);
+            agg.wind_u_sum += Math.cos(angleRad);
+            agg.wind_v_sum += Math.sin(angleRad);
+            
+            if (g.event_code === "WARNING") agg.has_warning = true;
+            if (g.event_code === "ADVISORY") agg.has_advisory = true;
+          });
+        });
+
+        function calcCategory(speed) {
+          if (speed >= 157) return 5;
+          if (speed >= 130) return 4;
+          if (speed >= 111) return 3;
+          if (speed >= 96) return 2;
+          if (speed >= 74) return 1;
+          return 0;
+        }
+
+        aggregatedGlyphs = Array.from(gridMap.values()).map(agg => {
+          const avg_u = agg.wind_u_sum / agg.count;
+          const avg_v = agg.wind_v_sum / agg.count;
+          let angleDeg = Math.atan2(avg_v, avg_u) * (180 / Math.PI) + 90;
+          if (angleDeg < 0) angleDeg += 360;
+
+          const avg_speed = agg.wind_speed_sum / agg.count;
+
+          return {
+            longitude: agg.longitude,
+            latitude: agg.latitude,
+            proximity_to_eye: agg.proximity_to_eye_sum / agg.count,
+            wind_speed: Math.round(avg_speed),
+            wind_flow_angle: Math.round(angleDeg),
+            precipitation: +(agg.precipitation_sum / agg.count).toFixed(2),
+            event_code: agg.has_warning ? "WARNING" : (agg.has_advisory ? "ADVISORY" : "NONE"),
+            category: calcCategory(avg_speed)
+          };
+        });
+      }
 
       gRight.selectAll('g.glyph-group').remove();
       windAnim.stop();
 
-      if (allGlyphs.length === 0) return;
+      if (aggregatedGlyphs.length === 0) return;
       
       if (settings.layers.currents) {
-        windAnim.updateField(allGlyphs);
+        windAnim.updateField(aggregatedGlyphs);
         windAnim.start();
       }
 
       if (!settings.layers.glyphs) return;
 
       const colorScale = d3.scaleSequential()
-        .domain(d3.extent(allGlyphs, d => d.proximity_to_eye))
+        .domain(d3.extent(aggregatedGlyphs, d => d.proximity_to_eye))
         .interpolator(d3.interpolateRdYlBu);
 
       function getWindBarbPath(speed) {
@@ -427,7 +491,7 @@ async function init() {
       }
 
       const glyphGroups = gRight.selectAll('g.glyph-group')
-        .data(allGlyphs)
+        .data(aggregatedGlyphs)
         .join('g')
         .attr('class', 'glyph-group')
         .attr('transform', d => {
