@@ -234,6 +234,7 @@ async function init() {
       const tx = rightMap.width / 2 - scale * flCoords[0];
       const ty = rightMap.height / 2 - scale * flCoords[1];
       const initialTransform = d3.zoomIdentity.translate(tx, ty).scale(scale);
+      rightMap.initialTransform = initialTransform;
       rightMap.targetTransform = initialTransform;
       rightMap.svg.call(rightMap.zoom.transform, initialTransform);
     }
@@ -489,23 +490,28 @@ async function init() {
 
     function updateGlyphs() {
       const selectedLines = coneData.lines.filter(l => selectedIds.has(l.id));
+      const rightMap = maps['map-right'];
+
+      if (selectedLines.length > 0 && !maps['map-left'].currentCoords) {
+        const t = d3.zoomTransform(rightMap.svg.node());
+        const it = rightMap.initialTransform;
+        if (Math.abs(t.k - it.k) > 0.01 || Math.abs(t.x - it.x) > 1 || Math.abs(t.y - it.y) > 1) {
+          rightMap.targetTransform = it;
+          rightMap.svg.transition().duration(500).call(rightMap.zoom.transform, it)
+            .on('end', () => updateGlyphs());
+          return;
+        }
+      }
+
       let aggregatedGlyphs = [];
 
       if (selectedLines.length > 0) {
         const gridMap = new Map();
         
-        const { svg: svgRight, projection: projRight, width, height, targetTransform } = maps['map-right'];
-        const transform = targetTransform || d3.zoomTransform(svgRight.node());
-        const margin = 50;
-
         selectedLines.forEach(l => {
           l.glyphs.forEach(g => {
             const coords = projRight([g.longitude, g.latitude]);
             if (!coords) return;
-            
-            const sx = transform.applyX(coords[0]);
-            const sy = transform.applyY(coords[1]);
-            if (sx < -margin || sx > width + margin || sy < -margin || sy > height + margin) return;
 
             const key = `${g.longitude.toFixed(2)},${g.latitude.toFixed(2)}`;
             if (!gridMap.has(key)) {
@@ -683,6 +689,7 @@ async function init() {
     document.getElementById('reset-btn').addEventListener('click', () => {
       selectedIds.clear();
       applyLineStyles(lines);
+      maps['map-right'].targetTransform = null;
       updateGlyphs();
       Object.entries(maps).forEach(([_id, entry]) => {
         entry.svg.transition().duration(500).call(entry.zoom.transform, d3.zoomIdentity);
