@@ -410,6 +410,8 @@ async function init() {
                 proximity_to_eye_sum: 0,
                 wind_speed_sum: 0,
                 precipitation_sum: 0,
+                wind_gust_sum: 0,
+                temperature_sum: 0,
                 wind_u_sum: 0,
                 wind_v_sum: 0,
                 has_warning: false,
@@ -421,6 +423,8 @@ async function init() {
             agg.proximity_to_eye_sum += g.proximity_to_eye;
             agg.wind_speed_sum += g.wind_speed;
             agg.precipitation_sum += g.precipitation;
+            agg.wind_gust_sum += (g.wind_gust || g.wind_speed * 1.25);
+            agg.temperature_sum += (g.temperature || 28.0);
             
             const angleRad = (g.wind_flow_angle - 90) * (Math.PI / 180);
             agg.wind_u_sum += Math.cos(angleRad);
@@ -451,8 +455,10 @@ async function init() {
           return {
             longitude: agg.longitude,
             latitude: agg.latitude,
-            proximity_to_eye: agg.proximity_to_eye_sum / agg.count,
+            proximity_to_eye: +(agg.proximity_to_eye_sum / agg.count).toFixed(2),
             wind_speed: Math.round(avg_speed),
+            wind_gust: Math.round(agg.wind_gust_sum / agg.count),
+            temperature: +(agg.temperature_sum / agg.count).toFixed(1),
             wind_flow_angle: Math.round(angleDeg),
             precipitation: +(agg.precipitation_sum / agg.count).toFixed(2),
             event_code: agg.has_warning ? "WARNING" : (agg.has_advisory ? "ADVISORY" : "NONE"),
@@ -479,14 +485,15 @@ async function init() {
 
       function getWindBarbPath(speed) {
         let knots = Math.round(speed);
-        if (knots < 5) return "M0,0 A1.5,1.5 0 1,1 0,0.1 Z";
-        let path = "M0,0 L0,-14 ", yOffset = -14;
+        let s = 0.5; // Scale factor to reduce height from 14 to ~2
+        if (knots < 5) return `M0,0 A${1.5*s},${1.5*s} 0 1,1 0,${0.1*s} Z`;
+        let path = `M0,0 L0,${-14*s} `, yOffset = -14*s;
         let fifties = Math.floor(knots / 50); knots %= 50;
         let tens = Math.floor(knots / 10); knots %= 10;
         let fives = Math.floor(knots / 5);
-        for (let i=0; i<fifties; i++) { path += `M0,${yOffset} L6,${yOffset+1} L0,${yOffset+2} `; yOffset += 3; }
-        for (let i=0; i<tens; i++) { path += `M0,${yOffset} L7,${yOffset-2} `; yOffset += 2.5; }
-        for (let i=0; i<fives; i++) { path += `M0,${yOffset+0.5} L4,${yOffset-1} `; yOffset += 2.5; }
+        for (let i=0; i<fifties; i++) { path += `M0,${yOffset} L${6*s},${yOffset+1*s} L0,${yOffset+2*s} `; yOffset += 3*s; }
+        for (let i=0; i<tens; i++) { path += `M0,${yOffset} L${7*s},${yOffset-2*s} `; yOffset += 2.5*s; }
+        for (let i=0; i<fives; i++) { path += `M0,${yOffset+0.5*s} L${4*s},${yOffset-1*s} `; yOffset += 2.5*s; }
         return path;
       }
 
@@ -502,12 +509,13 @@ async function init() {
         .on('mouseover', (event, d) => {
           tooltip.transition().duration(200).style('opacity', 1);
           tooltip.html(`
-            <p><strong>Intensity</strong> <span>Cat ${d.category}</span></p>
+            <p><strong>Category</strong> <span>${d.category}</span></p>
+            <p><strong>Dist to Eye</strong> <span>${(d.proximity_to_eye * 111.1).toFixed(2)} km</span></p>
             <p><strong>Wind Speed</strong> <span>${d.wind_speed} mph</span></p>
-            <p><strong>Heading</strong> <span>${d.wind_flow_angle}°</span></p>
-            <p><strong>Dist to Eye</strong> <span>${d.proximity_to_eye}°</span></p>
-            <p><strong>Precip</strong> <span>${d.precipitation} in/hr</span></p>
-            <p><strong>Event</strong> <span>${d.event_code}</span></p>
+            <p><strong>Wind Gust</strong> <span>${d.wind_gust} mph</span></p>
+            <p><strong>Precipitation</strong> <span>${d.precipitation} in/hr</span></p>
+            <p><strong>Temperature</strong> <span>${d.temperature} °C</span></p>
+            ${d.event_code !== "NONE" ? `<p><strong>Event</strong> <span>${d.event_code}</span></p>` : ''}
           `)
           .style('left', (event.pageX + 15) + 'px')
           .style('top', (event.pageY - 28) + 'px');
@@ -534,14 +542,14 @@ async function init() {
              
              d3.select(this).append('circle')
                .attr('cx', 0).attr('cy', 0)
-               .attr('r', 4)
+               .attr('r', 3)
                .attr('fill', '#111')
                .style('pointer-events', 'none');
 
              d3.select(this).append('text')
-               .attr('x', 0).attr('y', 2.5) 
+               .attr('x', 0).attr('y', 2) 
                .attr('text-anchor', 'middle')
-               .attr('font-size', 7)
+               .attr('font-size', 6)
                .attr('font-weight', 'bold')
                .attr('fill', '#fff')
                .text(mark)
@@ -556,7 +564,7 @@ async function init() {
           .append('path')
           .attr('d', d => getWindBarbPath(d.wind_speed))
           .attr('stroke', '#111')
-          .attr('stroke-width', 1.2)
+          .attr('stroke-width', .4)
           .attr('fill', d => d.wind_speed >= 50 ? '#111' : 'none');
       }
 

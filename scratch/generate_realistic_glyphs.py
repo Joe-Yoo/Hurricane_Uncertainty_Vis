@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import random
 
 def distance(x1, y1, x2, y2):
     return math.sqrt((x2-x1)**2 + (y2-y1)**2)
@@ -37,6 +38,20 @@ def process_data():
     RMW = 0.36 # degrees (~40km)
     VMAX = 115.0 # mph (Category 3)
     
+    # Define a denser grid with jitter (e.g., 1.0 degrees)
+    lon_step = 1.0
+    lat_step = 1.0
+    base_lon_vals = [-120.0 + i * lon_step for i in range(int(80 / lon_step) + 1)]
+    base_lat_vals = [5.0 + i * lat_step for i in range(int(50 / lat_step) + 1)]
+    
+    # Precompute a shared jittered grid so coordinates exactly match across lines for aggregation
+    jittered_grid = []
+    for blon in base_lon_vals:
+        for blat in base_lat_vals:
+            jlon = round(blon + random.uniform(-0.4, 0.4), 2)
+            jlat = round(blat + random.uniform(-0.4, 0.4), 2)
+            jittered_grid.append((jlon, jlat))
+            
     new_lines = []
     
     for line in data['lines']:
@@ -54,14 +69,7 @@ def process_data():
 
         new_glyphs = []
         
-        # Define a denser grid (e.g., 1.5 degrees instead of 3.0)
-        lon_step = 1.5
-        lat_step = 1.5
-        lon_vals = [round(-120.0 + i * lon_step, 2) for i in range(int(80 / lon_step) + 1)]
-        lat_vals = [round(5.0 + i * lat_step, 2) for i in range(int(50 / lat_step) + 1)]
-        
-        for glon in lon_vals:
-            for glat in lat_vals:
+        for (glon, glat) in jittered_grid:
                 closest_eye = get_closest_point(glon, glat, path_coords)
                 if not closest_eye:
                     continue
