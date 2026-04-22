@@ -227,6 +227,17 @@ async function init() {
       createMap('map-right', { interactive: false }),
     ]);
 
+    const rightMap = maps['map-right'];
+    const flCoords = rightMap.projection([-81.5, 27.5]);
+    if (flCoords) {
+      const scale = 1.5;
+      const tx = rightMap.width / 2 - scale * flCoords[0];
+      const ty = rightMap.height / 2 - scale * flCoords[1];
+      const initialTransform = d3.zoomIdentity.translate(tx, ty).scale(scale);
+      rightMap.targetTransform = initialTransform;
+      rightMap.svg.call(rightMap.zoom.transform, initialTransform);
+    }
+
     const coneData = await d3.json('realistic_hurricane_glyphs.json');
     if (!coneData) throw new Error("Could not load realistic_hurricane_glyphs.json");
     
