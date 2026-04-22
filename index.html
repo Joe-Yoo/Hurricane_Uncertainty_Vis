@@ -46,10 +46,7 @@
     <aside class="settings-sidebar">
       <div class="settings-group">
         <h3>Map Layers</h3>
-        <label class="control-item">
-          <input type="checkbox" id="layer-paths" checked />
-          Ensemble Paths
-        </label>
+
         <label class="control-item">
           <input type="checkbox" id="layer-glyphs" checked />
           Wind Glyphs
@@ -61,33 +58,55 @@
       </div>
 
       <div class="settings-group">
-        <h3>Glyph Style</h3>
-        <div class="radio-group">
-          <label>
-            <input type="radio" name="glyph-style" value="barbs" checked />
-            Wind Barbs
-          </label>
-          <label>
-            <input type="radio" name="glyph-style" value="circles" />
-            Simple Circles
-          </label>
-        </div>
-      </div>
-
-      <div class="settings-group">
         <h3>Glyph Properties</h3>
         <label class="control-item">
-          <input type="checkbox" id="prop-temp" checked />
-          Temperature Color
+          <input type="checkbox" id="prop-prox" checked />
+          Eye Proximity Heatmap
         </label>
         <label class="control-item">
-          <input type="checkbox" id="prop-precip" />
-          Precipitation Aura
+          <input type="checkbox" id="prop-icon" checked />
+          Event Icons
         </label>
         <label class="control-item">
-          <input type="checkbox" id="prop-labels" />
-          Value Labels
+          <input type="checkbox" id="prop-barbs" checked />
+          Wind Barbs
         </label>
+      </div>
+
+      <div class="settings-group legend-box">
+        <h3>Legend</h3>
+        
+        <div class="legend-item">
+          <div class="legend-color-scale" id="prox-color-scale" style="background: linear-gradient(to right, #d73027, #fc8d59, #fee090, #e0f3f8, #91bfdb, #4575b4);"></div>
+          <div class="legend-labels">
+            <span>Eye</span>
+            <span>Dist (deg)</span>
+            <span>Far</span>
+          </div>
+        </div>
+
+        <div class="legend-item row">
+          <svg width="24" height="24">
+            <circle cx="12" cy="12" r="6" fill="#111"></circle>
+            <text x="12" y="15" fill="#fff" font-size="10px" font-weight="bold" text-anchor="middle">+</text>
+          </svg>
+          <span>Eyewall Entry (+)</span>
+        </div>
+
+        <div class="legend-item row">
+          <svg width="24" height="24">
+            <circle cx="12" cy="12" r="6" fill="#111"></circle>
+            <text x="12" y="15" fill="#fff" font-size="10px" font-weight="bold" text-anchor="middle">~</text>
+          </svg>
+          <span>Surge Risk (~)</span>
+        </div>
+
+        <div class="legend-item row">
+          <svg width="24" height="24">
+            <path d="M12,4 L12,20 M12,4 L18,5 L12,7" fill="none" stroke="#333" stroke-width="1.2"></path>
+          </svg>
+          <span>Wind Barb</span>
+        </div>
       </div>
     </aside>
   </div>
