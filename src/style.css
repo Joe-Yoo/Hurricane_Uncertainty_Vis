@@ -220,6 +220,17 @@ body {
   top: 0;
   left: 0;
   pointer-events: none;
+  z-index: 10;
+}
+
+.map-container svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
 }
 
 .map-container:active {
@@ -284,11 +295,7 @@ body {
   accent-color: #4a6fa5;
 }
 
-.map-container svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
+
 
 .state {
   fill: #e9ecef;
@@ -312,6 +319,42 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
   transition: stroke 0.2s, stroke-width 0.2s, stroke-opacity 0.2s;
+}
+
+.legend-box {
+  margin-top: 16px;
+  border-top: 1px solid #dee2e6;
+  padding-top: 16px;
+}
+
+.legend-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.legend-item.row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.legend-color-scale {
+  width: 100%;
+  height: 12px;
+  background: linear-gradient(to right, #d73027, #fc8d59, #fee090, #e0f3f8, #91bfdb, #4575b4);
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #777;
 }
 
 .location-marker {

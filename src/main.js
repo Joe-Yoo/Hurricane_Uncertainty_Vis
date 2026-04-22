@@ -15,8 +15,7 @@ let windAnim = null;
 
 const settings = {
   layers: { paths: true, glyphs: true, currents: false },
-  glyphStyle: 'barbs',
-  props: { temp: true, precip: false, labels: false }
+  props: { prox: true, icon: true, barbs: true }
 };
 
 class WindAnimation {
@@ -142,6 +141,13 @@ async function createMap(containerId, { interactive = true } = {}) {
     .attr('width', width)
     .attr('height', height);
 
+  const defs = svg.append('defs');
+  const filter = defs.append('filter').attr('id', 'glow');
+  filter.append('feGaussianBlur').attr('stdDeviation', '2.5').attr('result', 'coloredBlur');
+  const feMerge = filter.append('feMerge');
+  feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+  feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
   const g = svg.append('g');
   const markerGroup = svg.append('g').attr('class', 'markers');
 
@@ -242,10 +248,7 @@ async function init() {
     const selectedIds = new Set();
 
     // Settings Sidebar Handlers
-    document.getElementById('layer-paths').addEventListener('change', function() {
-      settings.layers.paths = this.checked;
-      gLeft.selectAll('path.hurricane-line').style('display', settings.layers.paths ? null : 'none');
-    });
+
 
     document.getElementById('layer-glyphs').addEventListener('change', function() {
       settings.layers.glyphs = this.checked;
@@ -258,25 +261,18 @@ async function init() {
       else windAnim.stop();
     });
 
-    document.getElementsByName('glyph-style').forEach(el => {
-      el.addEventListener('change', function() {
-        settings.glyphStyle = this.value;
-        updateGlyphs();
-      });
-    });
-
-    document.getElementById('prop-temp').addEventListener('change', function() {
-      settings.props.temp = this.checked;
+    document.getElementById('prop-barbs').addEventListener('change', function() {
+      settings.props.barbs = this.checked;
       updateGlyphs();
     });
 
-    document.getElementById('prop-precip').addEventListener('change', function() {
-      settings.props.precip = this.checked;
+    document.getElementById('prop-prox').addEventListener('change', function() {
+      settings.props.prox = this.checked;
       updateGlyphs();
     });
 
-    document.getElementById('prop-labels').addEventListener('change', function() {
-      settings.props.labels = this.checked;
+    document.getElementById('prop-icon').addEventListener('change', function() {
+      settings.props.icon = this.checked;
       updateGlyphs();
     });
 
@@ -414,7 +410,7 @@ async function init() {
       if (!settings.layers.glyphs) return;
 
       const colorScale = d3.scaleSequential()
-        .domain(d3.extent(allGlyphs, d => d.temperature))
+        .domain(d3.extent(allGlyphs, d => d.proximity_to_eye))
         .interpolator(d3.interpolateRdYlBu);
 
       function getWindBarbPath(speed) {
@@ -437,8 +433,7 @@ async function init() {
         .attr('transform', d => {
           const coords = projRight([d.longitude, d.latitude]);
           if (!coords) return `translate(-9999,-9999)`;
-          return settings.glyphStyle === 'barbs' ? `translate(${coords[0]}, ${coords[1]}) rotate(${d.wind_flow_angle})` 
-                                                : `translate(${coords[0]}, ${coords[1]})`;
+          return `translate(${coords[0]}, ${coords[1]})`;
         })
         .on('mouseover', (event, d) => {
           tooltip.transition().duration(200).style('opacity', 1);
@@ -446,8 +441,9 @@ async function init() {
             <p><strong>Intensity</strong> <span>Cat ${d.category}</span></p>
             <p><strong>Wind Speed</strong> <span>${d.wind_speed} mph</span></p>
             <p><strong>Heading</strong> <span>${d.wind_flow_angle}°</span></p>
-            <p><strong>Temp</strong> <span>${d.temperature}°C</span></p>
+            <p><strong>Dist to Eye</strong> <span>${d.proximity_to_eye}°</span></p>
             <p><strong>Precip</strong> <span>${d.precipitation} in/hr</span></p>
+            <p><strong>Event</strong> <span>${d.event_code}</span></p>
           `)
           .style('left', (event.pageX + 15) + 'px')
           .style('top', (event.pageY - 28) + 'px');
@@ -459,40 +455,45 @@ async function init() {
           tooltip.transition().duration(200).style('opacity', 0);
         });
 
-      if (settings.props.precip) {
+      if (settings.props.prox) {
         glyphGroups.append('circle')
-          .attr('class', 'precip-aura')
-          .attr('r', d => d.precipitation * 8)
-          .attr('fill', '#4a6fa5')
-          .attr('fill-opacity', 0.15)
-          .attr('stroke', '#4a6fa5')
-          .attr('stroke-opacity', 0.3)
-          .attr('stroke-width', 0.5);
-      }
-
-      if (settings.glyphStyle === 'barbs') {
-        glyphGroups.append('path')
-          .attr('d', d => getWindBarbPath(d.wind_speed))
-          .attr('stroke', d => settings.props.temp ? colorScale(d.temperature) : '#333')
-          .attr('stroke-width', 1.2)
-          .attr('fill', d => d.wind_speed >= 50 && settings.props.temp ? colorScale(d.temperature) : 'none');
-      } else {
-        const size = d3.scaleLinear().domain(d3.extent(allGlyphs, d => d.wind_speed)).range([4, 12]);
-        glyphGroups.append('circle')
-          .attr('r', d => size(d.wind_speed))
-          .attr('fill', d => settings.props.temp ? colorScale(d.temperature) : '#4a6fa5')
+          .attr('r', 16)
+          .attr('fill', d => colorScale(d.proximity_to_eye))
           .attr('fill-opacity', 0.8)
-          .attr('stroke', '#fff')
-          .attr('stroke-width', 1);
+          .style('mix-blend-mode', 'multiply');
       }
 
-      if (settings.props.labels) {
-        glyphGroups.append('text')
-          .attr('y', 15)
-          .attr('text-anchor', 'middle')
-          .attr('font-size', '8px')
-          .attr('fill', '#666')
-          .text(d => `${d.wind_speed}m`);
+      if (settings.props.icon) {
+        glyphGroups.each(function(d) {
+          if (d.event_code === "WARNING" || d.event_code === "ADVISORY") {
+             const mark = d.event_code === "WARNING" ? "+" : "~";
+             
+             d3.select(this).append('circle')
+               .attr('cx', 0).attr('cy', 0)
+               .attr('r', 6)
+               .attr('fill', '#111')
+               .style('pointer-events', 'none');
+
+             d3.select(this).append('text')
+               .attr('x', 0).attr('y', 3) 
+               .attr('text-anchor', 'middle')
+               .attr('font-size', 10)
+               .attr('font-weight', 'bold')
+               .attr('fill', '#fff')
+               .text(mark)
+               .style('pointer-events', 'none');
+          }
+        });
+      }
+
+      if (settings.props.barbs) {
+        glyphGroups.append('g')
+          .attr('transform', d => `rotate(${d.wind_flow_angle})`)
+          .append('path')
+          .attr('d', d => getWindBarbPath(d.wind_speed))
+          .attr('stroke', '#111')
+          .attr('stroke-width', 1.2)
+          .attr('fill', d => d.wind_speed >= 50 ? '#111' : 'none');
       }
 
       glyphGroups.append('circle').attr('r', 10).attr('fill', 'transparent');
