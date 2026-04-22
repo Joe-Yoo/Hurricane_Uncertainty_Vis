@@ -41,8 +41,8 @@ def process_data():
     # Define a denser grid with jitter (e.g., 1.0 degrees)
     lon_step = 1.0
     lat_step = 1.0
-    base_lon_vals = [-120.0 + i * lon_step for i in range(int(80 / lon_step) + 1)]
-    base_lat_vals = [5.0 + i * lat_step for i in range(int(50 / lat_step) + 1)]
+    base_lon_vals = [-97.0 + i * lon_step for i in range(int(31 / lon_step) + 1)]
+    base_lat_vals = [12.0 + i * lat_step for i in range(int(31 / lat_step) + 1)]
     
     # Precompute a shared jittered grid so coordinates exactly match across lines for aggregation
     jittered_grid = []
