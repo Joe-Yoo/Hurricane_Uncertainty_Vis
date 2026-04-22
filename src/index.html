@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hurricane Uncertainty Vis: Introduction</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f4f8fc;
+      font-family: sans-serif;
+      color: #333;
+    }
+
+    .landing-card {
+      max-width: 680px;
+      width: 90%;
+      background: #fff;
+      border-radius: 16px;
+      padding: 48px 56px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .landing-card h1 {
+      font-size: 2rem;
+      color: #4a6fa5;
+      margin-bottom: 12px;
+    }
+
+    .landing-card .subtitle {
+      font-size: 1.05rem;
+      color: #666;
+      margin-bottom: 32px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .landing-card p {
+      font-size: 0.97rem;
+      color: #555;
+      line-height: 1.7;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .landing-card .divider {
+      border: none;
+      border-top: 1px solid #D9E8F5;
+      margin: 28px 0;
+    }
+
+    .btn-start {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 12px 36px;
+      background: #4a6fa5;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .btn-start:hover {
+      background: #3a5f95;
+    }
+  </style>
+</head>
+<body>
+  <div class="landing-card">
+    <h1>Hurricane Uncertainty Visualization</h1>
+    <p class="subtitle">Exploring forecast track uncertainty through interactive spaghetti models</p>
+
+    <hr class="divider" />
+
+    <p>
+      Hurricane track forecasts are inherently uncertain. Meteorologists generate
+      ensembles of possible paths, often called <strong>spaghetti models</strong>,
+      to communicate this uncertainty to the public and decision-makers.
+    </p>
+    <p>
+      This tool lets you interact with those ensemble tracks. You can select
+      individual lines of interest or define a geographic radius to highlight
+      tracks that pass near a location you care about.
+    </p>
+    <p>
+      Use the left map to explore tracks spatially. Use the right map to inspect
+      meteorological attributes (wind speed, temperature, and precipitation) for
+      the selected tracks.
+    </p>
+
+    <hr class="divider" />
+
+    <a class="btn-start" href="cone_vis.html">Launch Visualization</a>
+    <div style="margin-top: 16px;">
+      <a class="btn-nav btn-secondary" href="#" id="survey-btn" style="padding: 10px 28px; font-size: 0.95rem; font-weight: 600; border-radius: 999px; text-decoration: none; background: #fff; color: #4a6fa5; border: 1px solid #D9E8F5; transition: background 0.2s;">Take the Survey</a>
+    </div>
+  </div>
+</body>
+</html>
