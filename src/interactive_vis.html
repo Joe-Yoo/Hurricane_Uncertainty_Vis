@@ -19,7 +19,7 @@
       <span class="pill-option" data-mode="temp">Within Radius</span>
     </div>
     <div class="radius-slider-wrap">
-      <input type="range" id="radius-slider" min="50" max="2000" value="300" step="10" disabled />
+      <input type="range" id="radius-slider" min="10" max="2000" value="300" step="10" disabled />
       <span id="radius-label">300 km</span>
     </div>
   </header>
@@ -27,22 +27,89 @@
   <div class="container">
     <section class="panel" id="left-panel">
       <div class="box">
+        <h2>Predicted Hurricane Paths</h2>
         <div id="map-left" class="map-container"></div>
       </div>
     </section>
 
     <section class="panel" id="right-panel">
       <div class="box">
+        <h2>Ensemble Detail</h2>
         <div id="map-right" class="map-container no-interact"></div>
       </div>
     </section>
-  </div>
 
-  <footer class="vis-footer">
-    <a class="btn-prev" href="spaghetti_vis.html">Previous</a>
-    <span class="footer-label">3 / 3</span>
-    <a class="btn-next" href="conclusions.html">Next</a>
-  </footer>
+    <aside class="settings-sidebar">
+      <div id="selection-reminder" class="reminder-box">
+        Please select a location on the left map to enable controls.
+      </div>
+
+      <div class="settings-group">
+        <h3>Map Layers</h3>
+
+        <label class="control-item">
+          <input type="checkbox" id="layer-glyphs" checked disabled />
+          Wind Glyphs
+        </label>
+        <label class="control-item">
+          <input type="checkbox" id="layer-currents" checked disabled />
+          Animated Currents
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <h3>Glyph Properties</h3>
+        <label class="control-item">
+          <input type="checkbox" id="prop-prox" checked disabled />
+          Eye Proximity Heatmap
+        </label>
+        <label class="control-item">
+          <input type="checkbox" id="prop-icon" checked disabled />
+          Event Icons
+        </label>
+        <label class="control-item">
+          <input type="checkbox" id="prop-barbs" checked disabled />
+          Wind Barbs
+        </label>
+      </div>
+
+      <div class="settings-group legend-box">
+        <h3>Legend</h3>
+        
+        <div class="legend-item">
+          <div class="legend-color-scale" id="prox-color-scale" style="background: linear-gradient(to right, #d73027, #fc8d59, #fee090, #e0f3f8, #91bfdb, #4575b4);"></div>
+          <div class="legend-labels">
+            <span>Eye</span>
+            <span>Dist (deg)</span>
+            <span>Far</span>
+          </div>
+        </div>
+
+        <div class="legend-item row">
+          <svg width="24" height="24">
+            <circle cx="12" cy="12" r="6" fill="#111"></circle>
+            <text x="12" y="15" fill="#fff" font-size="10px" font-weight="bold" text-anchor="middle">+</text>
+          </svg>
+          <span>Eyewall Entry (+)</span>
+        </div>
+
+        <div class="legend-item row">
+          <svg width="24" height="24">
+            <circle cx="12" cy="12" r="6" fill="#111"></circle>
+            <text x="12" y="15" fill="#fff" font-size="10px" font-weight="bold" text-anchor="middle">~</text>
+          </svg>
+          <span>Surge Risk (~)</span>
+        </div>
+
+        <div class="legend-item row">
+          <svg width="24" height="24">
+            <path d="M12,4 L12,20 M12,4 L18,5 L12,7" fill="none" stroke="#333" stroke-width="1.2"></path>
+          </svg>
+          <span>Wind Barb</span>
+        </div>
+      </div>
+    </aside>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
