@@ -77,7 +77,7 @@ async function createMap(containerId, { interactive = true } = {}) {
 async function init() {
   await createMap('map-left', { interactive: true });
 
-  const coneData = await d3.json('cone_data.json');
+  const coneData = await d3.json('realistic_hurricane_glyphs.json');
   if (coneData && coneData.lines && coneData.lines.length > 0) {
     const { g: gLeft, path: pathLeft } = maps['map-left'];
 

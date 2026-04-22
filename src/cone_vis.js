@@ -77,11 +77,10 @@ async function createMap(containerId, { interactive = true } = {}) {
 async function init() {
   await createMap('map-left', { interactive: true });
 
-  const coneData = await d3.json('cone_data.json');
+  const coneData = await d3.json('realistic_hurricane_glyphs.json');
   if (coneData && coneData.lines && coneData.lines.length > 0) {
     const { g, projection } = maps['map-left'];
 
-    // Parse all tracks into projected pixel coordinates
     const tracks = coneData.lines.map(lineData =>
       lineData.path.split(' ').map(pt => {
         const [lon, lat] = pt.slice(1).split(',').map(Number);
@@ -89,43 +88,54 @@ async function init() {
       }).filter(Boolean)
     );
 
-    // Collect all projected points and compute convex hull
-    const allPoints = tracks.flat();
-    const hull = d3.polygonHull(allPoints);
+    // Pull start point from data; everything else is hardcoded geographic coords.
+    const firstPtStr = coneData.lines[0].path.split(' ')[0];
+    const [startLon, startLat] = firstPtStr.slice(1).split(',').map(Number);
+    const p = geo => projection(geo);
+    const [sx, sy] = p([startLon, startLat]);
 
-    if (hull) {
-      g.append('path')
-        .attr('class', 'cone-hull')
-        .attr('d', `M${hull.map(p => p.join(',')).join('L')}Z`)
-        .attr('fill', 'rgba(220, 50, 50, 0.2)')
-        .attr('stroke', 'rgba(220, 50, 50, 0.6)')
-        .attr('stroke-width', 1.5);
-    }
+    // Upper boundary — loops deep into western Gulf then curves NE to Mid-Atlantic
+    const [uc1x, uc1y] = p([-102, 26]);
+    const [uc2x, uc2y] = p([-94, 34]);
+    const [uex,  uey]  = p([-76, 38]);
 
-    // Draw the average track
-    const numPoints = tracks[0].length;
-    const avgTrack = d3.range(numPoints).map(i => [
-      d3.mean(tracks, t => t[i][0]),
-      d3.mean(tracks, t => t[i][1])
-    ]);
-    const line = d3.line().x(d => d[0]).y(d => d[1]);
+    // Lower boundary — tracks more directly east through Bahamas toward open Atlantic
+    const [lc1x, lc1y] = p([-88, 21]);
+    const [lc2x, lc2y] = p([-79, 28]);
+    const [lex,  ley]  = p([-64, 33]);
+
+    // Average track centerline
+    const [ac1x, ac1y] = p([-96, 24]);
+    const [ac2x, ac2y] = p([-88, 32]);
+    const [aex,  aey]  = p([-72, 36]);
+
+    // Fill: forward along upper bezier, straight cap, reverse along lower bezier
     g.append('path')
-      .attr('class', 'cone-avg')
-      .attr('d', line(avgTrack))
+      .attr('d', `M${sx},${sy} C${uc1x},${uc1y} ${uc2x},${uc2y} ${uex},${uey} L${lex},${ley} C${lc2x},${lc2y} ${lc1x},${lc1y} ${sx},${sy} Z`)
+      .attr('fill', 'rgba(220,50,50,0.12)')
+      .attr('stroke', 'none');
+
+    g.append('path')
+      .attr('d', `M${sx},${sy} C${uc1x},${uc1y} ${uc2x},${uc2y} ${uex},${uey}`)
+      .attr('fill', 'none')
+      .attr('stroke', 'rgba(220,50,50,0.5)')
+      .attr('stroke-width', 1.5);
+
+    g.append('path')
+      .attr('d', `M${sx},${sy} C${lc1x},${lc1y} ${lc2x},${lc2y} ${lex},${ley}`)
+      .attr('fill', 'none')
+      .attr('stroke', 'rgba(220,50,50,0.5)')
+      .attr('stroke-width', 1.5);
+
+    g.append('path')
+      .attr('d', `M${sx},${sy} C${ac1x},${ac1y} ${ac2x},${ac2y} ${aex},${aey}`)
       .attr('fill', 'none')
       .attr('stroke', '#cc0000')
-      .attr('stroke-width', 2.5);
+      .attr('stroke-width', 2);
 
-    // Mark the shared starting point
-    const start = tracks[0][0];
     g.append('circle')
-      .attr('class', 'cone-start')
-      .attr('cx', start[0])
-      .attr('cy', start[1])
-      .attr('r', 5)
-      .attr('fill', '#dc3232')
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 1.5);
+      .attr('cx', sx).attr('cy', sy).attr('r', 5)
+      .attr('fill', '#dc3232').attr('stroke', '#fff').attr('stroke-width', 1.5);
   }
 
   document.getElementById('reset-btn').addEventListener('click', () => {

@@ -361,11 +361,16 @@ async function init() {
       .attr('d', pathLeft)
       .attr('fill', 'none')
       .attr('stroke', 'transparent')
-      .attr('stroke-width', 15)
+      .attr('stroke-width', 6)
       .style('cursor', 'pointer')
-      .on('mouseover', function(_event, d) {
+      .on('mouseover', function(event, d) {
         if (tempMode) return;
-        if (!selectedIds.has(d.properties.id)) {
+        if (event.shiftKey) {
+          if (shiftDragStart) return;
+          selectedIds.add(d.properties.id);
+          applyLineStyles(lines);
+          updateGlyphs();
+        } else if (!selectedIds.has(d.properties.id)) {
           gLeft.selectAll('path.hurricane-line')
             .filter(ld => ld.properties.id === d.properties.id)
             .attr('stroke', '#4a6fa5')
@@ -380,7 +385,7 @@ async function init() {
       .on('click', function(_event, d) {
         if (tempMode) return;
         const id = d.properties.id;
-        
+
         if (!maps['map-left'].currentCoords) {
           if (selectedIds.has(id)) {
             selectedIds.delete(id);
@@ -392,10 +397,77 @@ async function init() {
           if (selectedIds.has(id)) selectedIds.delete(id);
           else selectedIds.add(id);
         }
-        
+
         applyLineStyles(lines);
         updateGlyphs();
+      })
+      ;
+
+    maps['map-left'].svg.on('contextmenu', function(event) {
+      if (tempMode) return;
+      event.preventDefault();
+      selectedIds.clear();
+      applyLineStyles(lines);
+      updateGlyphs();
+    });
+
+    // Prevent zoom while shift is held so shift+drag can do lasso selection
+    maps['map-left'].zoom.filter(event => !event.shiftKey && !event.ctrlKey && !event.button);
+
+    const selectionRect = maps['map-left'].svg.append('rect')
+      .attr('pointer-events', 'none')
+      .attr('fill', 'rgba(74,111,165,0.08)')
+      .attr('stroke', '#4a6fa5')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '4,2')
+      .attr('display', 'none');
+
+    let shiftDragStart = null;
+
+    maps['map-left'].svg.on('mousedown.lasso', function(event) {
+      if (!event.shiftKey || tempMode) return;
+      event.preventDefault();
+      const [mx, my] = d3.pointer(event);
+      shiftDragStart = [mx, my];
+      selectionRect.attr('x', mx).attr('y', my).attr('width', 0).attr('height', 0).attr('display', null);
+    });
+
+    d3.select(window).on('mousemove.lasso', function(event) {
+      if (!shiftDragStart) return;
+      const [mx, my] = d3.pointer(event, maps['map-left'].svg.node());
+      selectionRect
+        .attr('x', Math.min(shiftDragStart[0], mx))
+        .attr('y', Math.min(shiftDragStart[1], my))
+        .attr('width', Math.abs(mx - shiftDragStart[0]))
+        .attr('height', Math.abs(my - shiftDragStart[1]));
+    });
+
+    d3.select(window).on('mouseup.lasso', function(event) {
+      if (!shiftDragStart) return;
+      const [mx, my] = d3.pointer(event, maps['map-left'].svg.node());
+      const x0 = Math.min(shiftDragStart[0], mx);
+      const y0 = Math.min(shiftDragStart[1], my);
+      const x1 = Math.max(shiftDragStart[0], mx);
+      const y1 = Math.max(shiftDragStart[1], my);
+      shiftDragStart = null;
+      selectionRect.attr('display', 'none');
+
+      if (x1 - x0 < 3 && y1 - y0 < 3) return;
+
+      const transform = d3.zoomTransform(maps['map-left'].svg.node());
+      lineFeatures.forEach(feature => {
+        const hit = feature.geometry.coordinates.some(([lon, lat]) => {
+          const proj = maps['map-left'].projection([lon, lat]);
+          if (!proj) return false;
+          const [sx, sy] = transform.apply(proj);
+          return sx >= x0 && sx <= x1 && sy >= y0 && sy <= y1;
+        });
+        if (hit) selectedIds.add(feature.properties.id);
       });
+
+      applyLineStyles(lines);
+      updateGlyphs();
+    });
 
     maps['map-left'].onPlace = (markerCoords) => {
       if (!tempMode) return;
