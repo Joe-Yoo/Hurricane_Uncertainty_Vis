@@ -459,7 +459,7 @@ async function init() {
         glyphGroups.append('circle')
           .attr('r', 16)
           .attr('fill', d => colorScale(d.proximity_to_eye))
-          .attr('fill-opacity', 0.8)
+          .attr('fill-opacity', 0.4)
           .style('mix-blend-mode', 'multiply');
       }
 
@@ -470,14 +470,14 @@ async function init() {
              
              d3.select(this).append('circle')
                .attr('cx', 0).attr('cy', 0)
-               .attr('r', 6)
+               .attr('r', 4)
                .attr('fill', '#111')
                .style('pointer-events', 'none');
 
              d3.select(this).append('text')
-               .attr('x', 0).attr('y', 3) 
+               .attr('x', 0).attr('y', 2.5) 
                .attr('text-anchor', 'middle')
-               .attr('font-size', 10)
+               .attr('font-size', 7)
                .attr('font-weight', 'bold')
                .attr('fill', '#fff')
                .text(mark)

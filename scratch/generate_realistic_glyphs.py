@@ -57,8 +57,8 @@ def process_data():
         # Define a denser grid (e.g., 1.5 degrees instead of 3.0)
         lon_step = 1.5
         lat_step = 1.5
-        lon_vals = [round(-105.0 + i * lon_step, 2) for i in range(int(45 / lon_step) + 1)]
-        lat_vals = [round(15.0 + i * lat_step, 2) for i in range(int(30 / lat_step) + 1)]
+        lon_vals = [round(-120.0 + i * lon_step, 2) for i in range(int(80 / lon_step) + 1)]
+        lat_vals = [round(5.0 + i * lat_step, 2) for i in range(int(50 / lat_step) + 1)]
         
         for glon in lon_vals:
             for glat in lat_vals:
